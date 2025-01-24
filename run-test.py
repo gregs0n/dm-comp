@@ -38,7 +38,7 @@ def GetFunc():
 def loadTest():
     path = "./tests/stat/"
 
-    cells = list(range(23, 51))
+    cells = list(range(10, 51))
     thermal_conds = [1.0, 5.0, 10.0, 20.0]
     limits = (0.0, 1.0)
     stef_bolc = 5.67036713

@@ -1,12 +1,21 @@
-import numpy as np
-from scipy.integrate import nquad, quad
-from scipy.sparse.linalg import *
+"""
+Module template docstring
+"""
 
-from BaseStationaryScheme import BaseStationaryScheme
+import numpy as np
+from scipy.integrate import quad#, nquad
+from scipy.sparse.linalg import LinearOperator, bicgstab
+
+from base_stationary_scheme import BaseStationaryScheme
 from enviroment import Material
+from wraps import timer
 
 
 class FDMStationaryScheme(BaseStationaryScheme):
+    """
+    Class template docstring
+    """
+
     def __init__(
         self,
         F: np.ndarray,
@@ -15,23 +24,31 @@ class FDMStationaryScheme(BaseStationaryScheme):
         material: Material,
         limits: list[np.float64, np.float64],
     ):
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         super().__init__(F, G, square_shape, material, limits)
         self.cells = self.square_shape[0]
         self.h = (self.limits[1] - self.limits[0]) / self.cells
 
-    def solve(
-        self, tol: np.float64, U0_squared: np.ndarray = None, *args, **kwargs
-    ) -> np.ndarray:
-        if U0_squared is None:
-            H0_linear = (
-                self.stef_bolc
-                * np.power(300.0 / self.w, 4)
-                * np.ones(self.linear_shape)
-            )
-        else:
-            H0_linear = self.stef_bolc * np.power(
-                U0_squared.reshape(self.linear_shape) / self.w, 4
-            )
+    @timer
+    def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
+        # inner_tol = kwargs.get("inner_tol", 5e-4)
+        u0 = kwargs.get("u0_squared", 300.0 * np.ones(self.linear_shape))
+        H0_linear = self.stef_bolc * np.power(u0.reshape(self.linear_shape) / self.w, 4)
         A = LinearOperator(
             (*self.linear_shape, *self.linear_shape), matvec=self.operator
         )
@@ -52,8 +69,16 @@ class FDMStationaryScheme(BaseStationaryScheme):
         )
         return self.U
 
-    def operator(self, H_linear: np.ndarray) -> np.ndarray:
-        H = H_linear.reshape(self.square_shape)
+    def operator(self, u_linear: np.ndarray) -> np.ndarray:
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
+        H = u_linear.reshape(self.square_shape)
         res = np.zeros_like(H)
 
         # internal cells
@@ -103,9 +128,18 @@ class FDMStationaryScheme(BaseStationaryScheme):
 
         return res.reshape(self.linear_shape)
 
-    def jacobian(self, du_linear: np.ndarray, *args, **kwargs) -> np.ndarray:
+    def jacobian(self, du_linear: np.ndarray) -> np.ndarray:
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         return du_linear
 
+    @staticmethod
     def GetBoundaries(
         f_func,
         g_func: list,
@@ -114,8 +148,16 @@ class FDMStationaryScheme(BaseStationaryScheme):
         limits: list[np.float64, np.float64],
         stef_bolc: np.float64,
     ):
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         HeatStream = lambda t: stef_bolc * np.power(t, 4)
-        f = lambda x, y: HeatStream(f_func(x, y))
+        # f = lambda x, y: HeatStream(f_func(x, y))
         g = [
             lambda t: HeatStream(g_func[0](t)),
             lambda t: HeatStream(g_func[1](t)),
@@ -163,4 +205,12 @@ class FDMStationaryScheme(BaseStationaryScheme):
         return [F, G]
 
     def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         return u_squared

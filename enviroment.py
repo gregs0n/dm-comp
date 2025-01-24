@@ -1,8 +1,12 @@
+"""
+Module template docstring
+"""
+
 import pickle
-from hashlib import sha256
-import numpy as np
 from collections import namedtuple
 from dataclasses import dataclass
+
+import numpy as np
 
 Material = namedtuple(
     "Material",
@@ -26,6 +30,9 @@ TestParams = namedtuple(
 
 @dataclass
 class Test:
+    """
+    Class template docstring
+    """
     params: TestParams
     data: dict[str, np.ndarray]
 
@@ -33,9 +40,25 @@ class Test:
         return f"square_shape{self.params.square_shape}_tcc({self.params.thermal_cond:04.1f})"
 
     def getHash(self):
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         return f"{abs(hash(self.params)):0>16x}"
 
     def save(self, path: str = ""):
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         file_path = path + self.getHash() + ".bin"
         print(file_path)
         with open(file_path, "wb") as file:

@@ -1,12 +1,21 @@
-import numpy as np
-from scipy.integrate import nquad, quad
-from scipy.sparse.linalg import *
+"""
+Module template docstring
+"""
 
-from BaseStationaryScheme import BaseStationaryScheme
+import numpy as np
+from scipy.integrate import quad  # , nquad
+from scipy.sparse.linalg import LinearOperator, bicgstab
+
+from base_stationary_scheme import BaseStationaryScheme
 from enviroment import Material
+from wraps import timer
 
 
 class SDMStationaryScheme(BaseStationaryScheme):
+    """
+    Class template docstring
+    """
+
     def __init__(
         self,
         F: np.ndarray,
@@ -15,6 +24,14 @@ class SDMStationaryScheme(BaseStationaryScheme):
         material: Material,
         limits: list[np.float64, np.float64],
     ):
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         super().__init__(F, G, square_shape, material, limits)
 
         self.cells = self.square_shape[0]
@@ -27,9 +44,16 @@ class SDMStationaryScheme(BaseStationaryScheme):
             self.h, 2.0 * self.material.thermal_cond, self.stef_bolc
         )
 
-    def solve(
-        self, tol: np.float64, U0_squared: np.ndarray = None, *args, **kwargs
-    ) -> np.ndarray:
+    @timer
+    def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
 
         self.H, self.dH = SDMStationaryScheme.createH(
             self.h, self.material.thermal_cond, self.stef_bolc
@@ -38,16 +62,9 @@ class SDMStationaryScheme(BaseStationaryScheme):
             self.h, 2.0 * self.material.thermal_cond, self.stef_bolc
         )
 
-        inner_tol = 5e-4
-        if "inner_tol" in kwargs:
-            inner_tol = kwargs["inner_tol"]
-
-        if U0_squared is None:
-            U0_linear = 300.0 / self.w * np.ones(self.linear_shape)
-        else:
-            U0_linear = U0_squared.reshape(self.linear_shape) / self.w
-
-        self.U = U0_linear
+        inner_tol = kwargs.get("inner_tol", 5e-4)
+        u0 = kwargs.get("u0_squared", 300.0 * np.ones(self.linear_shape))
+        self.U = u0.reshape(self.linear_shape) / self.w
 
         A = LinearOperator(
             (*self.linear_shape, *self.linear_shape), matvec=self.jacobian
@@ -63,8 +80,9 @@ class SDMStationaryScheme(BaseStationaryScheme):
             x0=R,
         )
         if exit_code:
-            print(f"jacobian failed with exit code: {exit_code}")
-            exit()
+            print(f"jacobian Failed with exit code: {exit_code} ON THE START")
+            self.U = (self.w * self.U).reshape(self.square_shape)
+            return self.U, 1
 
         err = np.abs(dU).max()
         print(f"{err:.3e}")
@@ -79,14 +97,25 @@ class SDMStationaryScheme(BaseStationaryScheme):
                 x0=dU,
             )
             if exit_code:
-                print(f"jacobian failed with exit code: {exit_code}")
-                exit()
+                print(f"jacobian FAILED with exit code: {exit_code}")
+                print(f"final error: {err:.3e}")
+                self.U += self.dU
+                self.U = (self.w * self.U).reshape(self.square_shape)
+                return self.U, 1
             err = np.abs(dU).max()
             print(f"{err:.3e}")
-        self.U *= self.w
-        return self.U.reshape(self.square_shape)
+        self.U = (self.w * self.U).reshape(self.square_shape)
+        return self.U, exit_code
 
     def operator(self, u_linear: np.ndarray) -> np.ndarray:
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         u = u_linear.reshape(self.square_shape)
         res = np.zeros_like(u)
         H, B = self.H, self.B
@@ -138,7 +167,15 @@ class SDMStationaryScheme(BaseStationaryScheme):
 
         return res.reshape(self.linear_shape)
 
-    def jacobian(self, du_linear: np.ndarray, *args, **kwargs) -> np.ndarray:
+    def jacobian(self, du_linear: np.ndarray) -> np.ndarray:
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         u = self.U.reshape(self.square_shape)
         du = du_linear.reshape(self.square_shape)
         res = np.zeros_like(u)
@@ -224,6 +261,7 @@ class SDMStationaryScheme(BaseStationaryScheme):
 
         return res.reshape(self.linear_shape)
 
+    @staticmethod
     def GetBoundaries(
         f_func,
         g_func: list,
@@ -232,14 +270,22 @@ class SDMStationaryScheme(BaseStationaryScheme):
         limits: list[np.float64, np.float64],
         stef_bolc: np.float64,
     ):
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         h: np.float64 = (limits[1] - limits[0]) / square_shape[0]
 
-        HeatStream, _ = SDMStationaryScheme.createH(h, material.thermal_cond, stef_bolc)
+        # HeatStream, _ = SDMStationaryScheme.createH(h, material.thermal_cond, stef_bolc)
         BoundaryHeatStream, _ = SDMStationaryScheme.createH(
             h, 2.0 * material.thermal_cond, stef_bolc
         )
 
-        f = lambda x, y: HeatStream(f_func(x, y))
+        # f = lambda x, y: HeatStream(f_func(x, y))
         g = [
             lambda t: BoundaryHeatStream(g_func[0](t)),
             lambda t: BoundaryHeatStream(g_func[1](t)),
@@ -285,7 +331,16 @@ class SDMStationaryScheme(BaseStationaryScheme):
 
         return [F, G]
 
+    @staticmethod
     def createH(h: np.float64, thermal_cond: np.float64, stef_bolc: np.float64):
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         w = 100.0 if stef_bolc > 1.0 else 1.0
         a = h / thermal_cond
         b = np.float_power(4.0 * stef_bolc / w * a, 1.0 / 3.0)
@@ -316,4 +371,12 @@ class SDMStationaryScheme(BaseStationaryScheme):
         return H, dH
 
     def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
         return u_squared
