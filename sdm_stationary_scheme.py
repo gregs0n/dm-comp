@@ -34,8 +34,8 @@ class SDMStationaryScheme(BaseStationaryScheme):
         """
         super().__init__(F, G, square_shape, material, limits)
 
-        self.cells = self.square_shape[0]
-        self.h = (self.limits[1] - self.limits[0]) / self.cells
+        cells = self.square_shape[0]
+        self.h = (self.limits[1] - self.limits[0]) / cells
 
         self.H, self.dH = SDMStationaryScheme.createH(
             self.h, self.material.thermal_cond, self.stef_bolc
@@ -64,13 +64,14 @@ class SDMStationaryScheme(BaseStationaryScheme):
 
         inner_tol = kwargs.get("inner_tol", 5e-4)
         u0 = kwargs.get("u0_squared", 300.0 * np.ones(self.linear_shape))
-        self.U = u0.reshape(self.linear_shape) / self.w
+        U = u0.reshape(self.linear_shape) / self.w
 
         A = LinearOperator(
-            (*self.linear_shape, *self.linear_shape), matvec=self.jacobian
+            (*self.linear_shape, *self.linear_shape),
+            matvec=lambda du: self.jacobian(U, du),
         )
         b = (self.F + self.G).reshape(self.linear_shape)
-        R = b - self.operator(self.U)
+        R = b - self.operator(U)
 
         dU, exit_code = bicgstab(
             A,
@@ -81,14 +82,14 @@ class SDMStationaryScheme(BaseStationaryScheme):
         )
         if exit_code:
             print(f"jacobian Failed with exit code: {exit_code} ON THE START")
-            self.U = (self.w * self.U).reshape(self.square_shape)
-            return self.U, 1
+            U = (self.w * U).reshape(self.square_shape)
+            return U, exit_code
 
         err = np.abs(dU).max()
         print(f"{err:.3e}")
         while err > tol:
-            self.U += dU
-            R = b - self.operator(self.U)
+            U += dU
+            R = b - self.operator(U)
             dU, exit_code = bicgstab(
                 A,
                 R,
@@ -99,15 +100,15 @@ class SDMStationaryScheme(BaseStationaryScheme):
             if exit_code:
                 print(f"jacobian FAILED with exit code: {exit_code}")
                 print(f"final error: {err:.3e}")
-                self.U += self.dU
-                self.U = (self.w * self.U).reshape(self.square_shape)
-                return self.U, 1
+                U += dU
+                U = (self.w * U).reshape(self.square_shape)
+                return U, exit_code
             err = np.abs(dU).max()
             print(f"{err:.3e}")
-        self.U = (self.w * self.U).reshape(self.square_shape)
-        return self.U, exit_code
+        U = (self.w * U).reshape(self.square_shape)
+        return U, exit_code
 
-    def operator(self, u_linear: np.ndarray) -> np.ndarray:
+    def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
         Template docstring (EDIT)
 
@@ -167,7 +168,7 @@ class SDMStationaryScheme(BaseStationaryScheme):
 
         return res.reshape(self.linear_shape)
 
-    def jacobian(self, du_linear: np.ndarray) -> np.ndarray:
+    def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
         Template docstring (EDIT)
 
@@ -176,7 +177,7 @@ class SDMStationaryScheme(BaseStationaryScheme):
         Returns:
             what function returns
         """
-        u = self.U.reshape(self.square_shape)
+        u = u_linear.reshape(self.square_shape)
         du = du_linear.reshape(self.square_shape)
         res = np.zeros_like(u)
         dH, dB = self.dH, self.dB

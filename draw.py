@@ -1,8 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def draw1D(
-    data: list, limits: list, plot_name: str, yscale="linear", show_plot=True, ylim=[], legends=[]
+    data: list,
+    limits: list,
+    plot_name: str,
+    yscale="linear",
+    show_plot=True,
+    ylim=[],
+    legends=[],
 ):
 
     arg = np.linspace(limits[0], limits[1], data[0].size)
@@ -16,7 +23,7 @@ def draw1D(
         ylim = [min([i.min() for i in data]), max([i.max() for i in data])]
     ax.set_yscale(yscale)
     ax.set_ylim(ymin=ylim[0], ymax=ylim[1])
-    #ax.set_xlim(xmin=1.0/limits[0], xmax=1.0/limits[1])
+    # ax.set_xlim(xmin=1.0/limits[0], xmax=1.0/limits[1])
     ax.grid(True)
     # ax.legend()
     if show_plot:
@@ -26,14 +33,15 @@ def draw1D(
     plt.close()
     del fig, ax
 
+
 def drawHeatmap(
     data: np.ndarray, limits: list, plot_name: str, show_plot=True, zlim=[]
 ):
     n = data.shape[0]
     fig, ax = plt.subplots()
-    h = (limits[1] - limits[0])/n
-    x = np.arange(limits[0] + h/2, limits[1], h)
-    y = np.arange(limits[0] + h/2, limits[1], h)
+    h = (limits[1] - limits[0]) / n
+    x = np.arange(limits[0] + h / 2, limits[1], h)
+    y = np.arange(limits[0] + h / 2, limits[1], h)
     ## x, h = np.linspace(limits[0], limits[1], n, retstep=True)
     ## y = np.linspace(limits[0], limits[1], n)
     xgrid, ygrid = np.meshgrid(x, y)
@@ -44,7 +52,7 @@ def drawHeatmap(
     )  # cmap='hot' | 'afmhot' | 'gist_heat'
     ax.set_title(plot_name)
     ax.axis([limits[0], limits[1], limits[0], limits[1]])
-    #ax.plot(xgrid.flat, ygrid.flat, '.', color='black')
+    # ax.plot(xgrid.flat, ygrid.flat, '.', color='black')
     fig.colorbar(c, ax=ax)
     if show_plot:
         plt.show()

@@ -39,10 +39,9 @@ class DirectStationaryScheme(BaseStationaryScheme):
         """
         super().__init__(F, G, square_shape, material, limits)
 
-        self.cells = self.square_shape[0]
-        self.cell_size = self.square_shape[2]
-        self.h = (self.limits[1] - self.limits[0]) / ((self.cell_size - 1) * self.cells)
-        self.h2 = self.h**2
+        cells = self.square_shape[0]
+        cell_size = self.square_shape[2]
+        self.h = (self.limits[1] - self.limits[0]) / ((cell_size - 1) * cells)
 
         self.tcc_n = self.material.thermal_cond * self.w
         self.HeatStream = lambda v: self.stef_bolc * fabs(v) * fpower(v, 3)
@@ -51,9 +50,7 @@ class DirectStationaryScheme(BaseStationaryScheme):
         )
 
     @timer
-    def solve(
-        self, tol: np.float64, *args, **kwargs
-    ) -> np.ndarray:
+    def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
         """
         Template docstring (EDIT)
 
@@ -62,14 +59,14 @@ class DirectStationaryScheme(BaseStationaryScheme):
         Returns:
             what function returns
         """
-        self.tcc_n = self.material.thermal_cond * self.w
 
         inner_tol = kwargs.get("inner_tol", 5e-4)
         u0 = kwargs.get("u0_squared", 300.0 * np.ones(self.linear_shape))
-        self.U = u0.reshape(self.linear_shape) / self.w
+        U = u0.reshape(self.linear_shape) / self.w
 
         A = LinearOperator(
-            (*self.linear_shape, *self.linear_shape), matvec=self.jacobian
+            (*self.linear_shape, *self.linear_shape),
+            matvec=lambda du: self.jacobian(U, du),
         )
 
         self.G[0, 0, 0, 0] *= 2
@@ -78,8 +75,8 @@ class DirectStationaryScheme(BaseStationaryScheme):
         self.G[0, -1, 0, -1] *= 2
 
         b = (self.F + (2 / self.h) * self.G).reshape(self.linear_shape)
-        R = b - self.operator(self.U)
-        self.dU, exit_code = bicgstab(
+        R = b - self.operator(U)
+        dU, exit_code = bicgstab(
             A,
             R,
             rtol=inner_tol,
@@ -88,33 +85,33 @@ class DirectStationaryScheme(BaseStationaryScheme):
         )
         if exit_code:
             print(f"jacobian Failed with exit code: {exit_code} ON THE START")
-            self.U = (self.w * self.U).reshape(self.square_shape)
-            return self.U, 1
+            U = (self.w * U).reshape(self.square_shape)
+            return U, exit_code
 
-        err = np.abs(self.dU).max()
+        err = np.abs(dU).max()
         print(f"\t{err:.3e}")
         while err > tol:
-            self.U += self.dU
-            R = b - self.operator(self.U)
-            self.dU, exit_code = bicgstab(
+            U += dU
+            R = b - self.operator(U)
+            dU, exit_code = bicgstab(
                 A,
                 R,
                 rtol=inner_tol,
                 atol=0.0,
-                x0=self.dU,
+                x0=dU,
             )
             if exit_code:
                 print(f"jacobian FAILED with exit code: {exit_code}")
                 print(f"final error: {err:.3e}")
-                self.U += self.dU
-                self.U = (self.w * self.U).reshape(self.square_shape)
-                return self.U, 1
-            err = np.abs(self.dU).max()
+                U += dU
+                U = (self.w * U).reshape(self.square_shape)
+                return U, exit_code
+            err = np.abs(dU).max()
             print(f"\t{err:.3e}")
-        self.U = (self.w * self.U).reshape(self.square_shape)
-        return self.U, exit_code
+        U = (self.w * U).reshape(self.square_shape)
+        return U, exit_code
 
-    def operator(self, u_linear: np.ndarray) -> np.ndarray:
+    def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
         Template docstring (EDIT)
 
@@ -126,8 +123,8 @@ class DirectStationaryScheme(BaseStationaryScheme):
         u = u_linear.reshape(self.square_shape)
         res = np.zeros_like(u)
         h = self.h
-        h2 = self.h2
-        tcc_n_h2 = self.tcc_n / h2
+        h2 = h * h
+        tcc_n_h2 = self.material.thermal_cond * self.w / h2
         two_div_h = 2 / h
 
         HeatStream = self.HeatStream
@@ -210,7 +207,7 @@ class DirectStationaryScheme(BaseStationaryScheme):
 
         return res.reshape(self.linear_shape)
 
-    def jacobian(self, du_linear: np.ndarray) -> np.ndarray:
+    def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
         Template docstring (EDIT)
 
@@ -219,12 +216,12 @@ class DirectStationaryScheme(BaseStationaryScheme):
         Returns:
             what function returns
         """
+        u = u_linear.reshape(self.square_shape)
         du = du_linear.reshape(self.square_shape)
         res = np.zeros_like(du)
-        u = self.U.reshape(self.square_shape)
         h = self.h
-        h2 = self.h2
-        tcc_n_h2 = self.tcc_n / h2
+        h2 = self.h * self.h
+        tcc_n_h2 = self.material.thermal_cond * self.w / h2
         two_div_h = 2 / h
         dHeatStream = self.dHeatStream
 
@@ -415,13 +412,14 @@ class DirectStationaryScheme(BaseStationaryScheme):
                                 i, j, i2, j2
                             ]
         else:
+            h2 = self.h * self.h
             u_flat = np.zeros(shape=(cells, cells))
             for i_cell in range(cells):
                 for j_cell in range(cells):
                     cur_cell = u_squared[i_cell, j_cell]
-                    u_flat[i_cell, j_cell] += np.sum(cur_cell[1:-1, 1:-1]) * self.h2
+                    u_flat[i_cell, j_cell] += np.sum(cur_cell[1:-1, 1:-1]) * h2
                     u_flat[i_cell, j_cell] += (
-                        self.h2
+                        h2
                         * 0.5
                         * (
                             np.sum(cur_cell[1:-1, 0])
@@ -431,7 +429,7 @@ class DirectStationaryScheme(BaseStationaryScheme):
                         )
                     )
                     u_flat[i_cell, j_cell] += (
-                        self.h2
+                        h2
                         * 0.25
                         * (
                             cur_cell[0, 0]

@@ -3,7 +3,7 @@ Module template docstring
 """
 
 import numpy as np
-from scipy.integrate import quad#, nquad
+from scipy.integrate import quad  # , nquad
 from scipy.sparse.linalg import LinearOperator, bicgstab
 
 from base_stationary_scheme import BaseStationaryScheme
@@ -63,13 +63,11 @@ class FDMStationaryScheme(BaseStationaryScheme):
         )
         if exit_code:
             print(f"operator failed with exit code: {exit_code}")
-            # exit()
-        self.U = (self.w * np.power(res / self.stef_bolc, 0.25)).reshape(
-            self.square_shape
-        )
-        return self.U
+            return np.zeros_like(self.F), exit_code
+        U = (self.w * np.power(res / self.stef_bolc, 0.25)).reshape(self.square_shape)
+        return U, exit_code
 
-    def operator(self, u_linear: np.ndarray) -> np.ndarray:
+    def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
         Template docstring (EDIT)
 
@@ -128,7 +126,7 @@ class FDMStationaryScheme(BaseStationaryScheme):
 
         return res.reshape(self.linear_shape)
 
-    def jacobian(self, du_linear: np.ndarray) -> np.ndarray:
+    def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
         Template docstring (EDIT)
 

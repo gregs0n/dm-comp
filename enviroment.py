@@ -8,16 +8,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-Material = namedtuple(
-    "Material",
-    [
-        "name",
-        "thermal_cond",
-        "tmin",
-        "tmax",
-        "crho"
-    ]
-)
+Material = namedtuple("Material", ["name", "thermal_cond", "tmin", "tmax", "crho"])
 
 TestParams = namedtuple(
     "TestParams",
@@ -25,14 +16,16 @@ TestParams = namedtuple(
         "square_shape",
         "thermal_cond",
         "limits",
-    ]
+    ],
 )
+
 
 @dataclass
 class Test:
     """
     Class template docstring
     """
+
     params: TestParams
     data: dict[str, np.ndarray]
 

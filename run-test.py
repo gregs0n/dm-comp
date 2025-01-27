@@ -9,6 +9,7 @@ from DirectStationaryScheme import DirectStationaryScheme
 from enviroment import Material, TestParams, Test
 from draw import drawHeatmap
 
+
 def GetFunc():
     ## returns f(x, y) and list of 4 g(t) NORMED
     w = 100.0
@@ -18,22 +19,17 @@ def GetFunc():
     d = tmin
     f = lambda x, y: 0.0
     g = [
-        lambda t: (
-            (d + coef * np.sin(np.pi * t / 0.3))
-            if 0.0 <= t <= 0.3
-            else tmin
-        ),
+        lambda t: ((d + coef * np.sin(np.pi * t / 0.3)) if 0.0 <= t <= 0.3 else tmin),
         # lambda t: tmax,
         lambda t: tmin,
         lambda t: (
-            (d + coef * np.sin(np.pi * (1.0 - t) / 0.3))
-            if 0.7 <= t <= 1.0
-            else tmin
+            (d + coef * np.sin(np.pi * (1.0 - t) / 0.3)) if 0.7 <= t <= 1.0 else tmin
         ),
         lambda t: tmin,
         # lambda t: tmin,
     ]
     return f, g
+
 
 def loadTest():
     path = "./tests/stat/"
@@ -49,12 +45,12 @@ def loadTest():
 
     cell_size_start = 10
 
-    for (cell, tcc) in product(cells, thermal_conds[-1:]):
+    for cell, tcc in product(cells, thermal_conds[-1:]):
         param = TestParams((cell, cell), tcc, limits)
-        test = Test(param, {"FDM" : np.zeros((cell, cell))})
+        test = Test(param, {"FDM": np.zeros((cell, cell))})
         material = Material("template", tcc, 0.0, 1.0, 1.0)
         print(cell, tcc, test, test.getHash(), end=" ")
-        
+
         file = open(path + test.getHash() + ".bin", "rb")
         bnd_data = pickle.load(file)
         file.close()
@@ -86,6 +82,7 @@ def loadTest():
         # if cell_size < 11:
         #     test.data = bnd_data
         #     test.save(path)
+
 
 if __name__ == "__main__":
     loadTest()

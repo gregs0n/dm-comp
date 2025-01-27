@@ -20,15 +20,13 @@ class BaseScheme(abc.ABC):
         G: np.ndarray,
         square_shape: tuple,  # [cells, cells, cell_size, cell_size]
         material: Material,
-        limits: list
+        limits: list,
     ):
         """
         Base initializer of every derivative scheme.
         """
         self.F = F
         self.G = G
-        self.U = np.zeros(square_shape)
-        self.dU = np.zeros(square_shape)
 
         self.square_shape = square_shape
         _temp_shape_size = 1
@@ -44,9 +42,7 @@ class BaseScheme(abc.ABC):
         self.stef_bolc = 5.67036713
 
     @abc.abstractmethod
-    def solve(
-        self, tol: np.float64, *args, **kwargs
-    ) -> np.ndarray:
+    def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
         """
         Abstarct method for solving schemes
 
@@ -58,7 +54,7 @@ class BaseScheme(abc.ABC):
         """
 
     @abc.abstractmethod
-    def operator(self, u_linear: np.ndarray) -> np.ndarray:
+    def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
         Abstract method for operator of the scheme.
 
@@ -69,7 +65,7 @@ class BaseScheme(abc.ABC):
         """
 
     @abc.abstractmethod
-    def jacobian(self, du_linear: np.ndarray) -> np.ndarray:
+    def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
         Abstract method for operator's jacobian of the scheme.
         Use in Newton's method. For computing uses last newton's approx of the U-function
