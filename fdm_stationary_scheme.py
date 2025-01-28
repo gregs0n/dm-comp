@@ -33,8 +33,8 @@ class FDMStationaryScheme(BaseStationaryScheme):
             what function returns
         """
         super().__init__(F, G, square_shape, material, limits)
-        self.cells = self.square_shape[0]
-        self.h = (self.limits[1] - self.limits[0]) / self.cells
+        cells = self.square_shape[0]
+        self.h = (self.limits[1] - self.limits[0]) / cells
 
     @timer
     def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
@@ -47,18 +47,19 @@ class FDMStationaryScheme(BaseStationaryScheme):
             what function returns
         """
         # inner_tol = kwargs.get("inner_tol", 5e-4)
-        u0 = kwargs.get("u0_squared", 300.0 * np.ones(self.linear_shape))
-        H0_linear = self.stef_bolc * np.power(u0.reshape(self.linear_shape) / self.w, 4)
+        u0 = kwargs.get("u0_squared", 300.0 * np.ones(np.prod(self.square_shape)))
+        H0_linear = self.stef_bolc * np.power(u0.flatten() / self.w, 4)
         A = LinearOperator(
-            (*self.linear_shape, *self.linear_shape), matvec=self.operator
+            (H0_linear.size, H0_linear.size),
+            matvec=self.operator
         )
-        b = (self.F + self.G).reshape(self.linear_shape)
+        b = (self.F + self.G).flatten()
         R = b - self.operator(H0_linear)
         res, exit_code = bicgstab(
             A,
             b,
-            rtol=tol,
-            atol=0.0,
+            rtol=0.0,
+            atol=tol,
             x0=R,
         )
         if exit_code:
@@ -124,7 +125,7 @@ class FDMStationaryScheme(BaseStationaryScheme):
         res[-1, -1] = H[-1, -1] - 0.5 * (H[-2, -1] + H[-1, -2]) + H[-1, -1]
         res[0, -1] = H[0, -1] - 0.5 * (H[1, -1] + H[0, -2]) + H[0, -1]
 
-        return res.reshape(self.linear_shape)
+        return res.flatten()
 
     def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """

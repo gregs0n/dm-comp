@@ -29,10 +29,6 @@ class BaseScheme(abc.ABC):
         self.G = G
 
         self.square_shape = square_shape
-        _temp_shape_size = 1
-        for _shape_size in square_shape:
-            _temp_shape_size *= _shape_size
-        self.linear_shape = (_temp_shape_size,)
 
         self.material = material
         self.limits = limits

@@ -61,11 +61,11 @@ class DirectStationaryScheme(BaseStationaryScheme):
         """
 
         inner_tol = kwargs.get("inner_tol", 5e-4)
-        u0 = kwargs.get("u0_squared", 300.0 * np.ones(self.linear_shape))
-        U = u0.reshape(self.linear_shape) / self.w
+        u0 = kwargs.get("u0_squared", 300.0 * np.ones(np.prod(self.square_shape)))
+        U = u0.flatten() / self.w
 
         A = LinearOperator(
-            (*self.linear_shape, *self.linear_shape),
+            (U.size, U.size),
             matvec=lambda du: self.jacobian(U, du),
         )
 
@@ -74,7 +74,7 @@ class DirectStationaryScheme(BaseStationaryScheme):
         self.G[-1, -1, -1, -1] *= 2
         self.G[0, -1, 0, -1] *= 2
 
-        b = (self.F + (2 / self.h) * self.G).reshape(self.linear_shape)
+        b = (self.F + (2 / self.h) * self.G).flatten()
         R = b - self.operator(U)
         dU, exit_code = bicgstab(
             A,
@@ -205,7 +205,7 @@ class DirectStationaryScheme(BaseStationaryScheme):
         res[:-1, -1, -1, -1] -= two_div_h * HeatStream(u[1:, -1, 0, -1])
         res[1:, -1, 0, -1] -= two_div_h * HeatStream(u[:-1, -1, -1, -1])
 
-        return res.reshape(self.linear_shape)
+        return res.flatten()
 
     def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
@@ -331,7 +331,7 @@ class DirectStationaryScheme(BaseStationaryScheme):
             u[:-1, -1, -1, -1], du[:-1, -1, -1, -1]
         )
 
-        return res.reshape(self.linear_shape)
+        return res.flatten()
 
     @staticmethod
     def GetBoundaries(

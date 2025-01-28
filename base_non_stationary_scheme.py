@@ -21,7 +21,7 @@ class BaseNonStationaryScheme(BaseScheme):
         G: np.ndarray,
         square_shape: tuple,
         material: Material,
-        limits: list[np.float64, np.float64, np.float64],
+        limits: list[np.float64, np.float64, np.float64], # [a, b, T] - square [a, b] x [a, b] x [0, T]
     ):
         """
         Template docstring (EDIT)
@@ -33,7 +33,7 @@ class BaseNonStationaryScheme(BaseScheme):
         """
         super().__init__(F, G, square_shape, material, limits)
         self.cur_layer = 0
-        self.dt = self.limits[0] / self.F.shape[0]
+        self.dt = self.limits[2] / self.F.shape[0]
 
     @timer
     def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
@@ -71,7 +71,6 @@ class BaseNonStationaryScheme(BaseScheme):
             what function returns
         """
 
-    @abc.abstractmethod
     def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
         """
         Template docstring (EDIT)
@@ -81,3 +80,15 @@ class BaseNonStationaryScheme(BaseScheme):
         Returns:
             what function returns
         """
+
+    @abc.abstractmethod
+    def flatten_layer(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
+        """
+        Template docstring (EDIT)
+
+        Args:
+            arg1: arg1 decsription
+        Returns:
+            what function returns
+        """
+        ## TODO

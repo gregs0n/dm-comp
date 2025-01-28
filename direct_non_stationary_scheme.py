@@ -59,11 +59,11 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         """
 
         inner_tol = kwargs.get("inner_tol", 5e-4)
-        u_prev = u_prev_squared.reshape(self.linear_shape)
+        u_prev = u_prev_squared.flatten()
         U = u_prev
 
         A = LinearOperator(
-            (*self.linear_shape, *self.linear_shape),
+            (U.size, U.size),
             matvec=lambda du: self.jacobian(U, du),
         )
 
@@ -72,9 +72,7 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         self.G[self.cur_layer, -1, -1, -1, -1] *= 2
         self.G[self.cur_layer, 0, -1, 0, -1] *= 2
 
-        b = (self.F[self.cur_layer] + (2 / self.h) * self.G[self.cur_layer]).reshape(
-            self.linear_shape
-        )
+        b = (self.F[self.cur_layer] + (2 / self.h) * self.G[self.cur_layer]).flatten()
         R = b - self.operator(U, u_prev_linear=u_prev)
         dU, exit_code = bicgstab(
             A,
@@ -153,17 +151,6 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
             f_func
         Returns:
             [F, G]
-        """
-        ## TODO
-
-    def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
-        """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
         """
         ## TODO
 
