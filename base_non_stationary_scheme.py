@@ -21,7 +21,10 @@ class BaseNonStationaryScheme(BaseScheme):
         G: np.ndarray,
         square_shape: tuple,
         material: Material,
-        limits: list[np.float64, np.float64, np.float64], # [a, b, T] - square [a, b] x [a, b] x [0, T]
+        dt: np.float64,
+        limits: list[
+            np.float64, np.float64, np.float64
+        ],  # [a, b, T] - square [a, b] x [a, b] x [0, T]
     ):
         """
         Template docstring (EDIT)
@@ -33,7 +36,7 @@ class BaseNonStationaryScheme(BaseScheme):
         """
         super().__init__(F, G, square_shape, material, limits)
         self.cur_layer = 0
-        self.dt = self.limits[2] / self.F.shape[0]
+        self.dt = dt
 
     @timer
     def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
@@ -80,6 +83,23 @@ class BaseNonStationaryScheme(BaseScheme):
         Returns:
             what function returns
         """
+        mod = kwargs.get("mod", 0)
+        if mod > 1 or len(u_squared.shape) != 5 :
+            return u_squared
+
+        cells = self.square_shape[0]
+        cell_size = self.square_shape[2]
+        if mod == 0:
+            res = np.zeros((u_squared.shape[0], cells, cells))
+        else:
+            flat_size = cells * cell_size
+            flat_shape = (u_squared.shape[0], flat_size, flat_size)
+            res = np.zeros(flat_shape)
+
+        for i in range(u_squared.shape[0]):
+            res[i] = self.flatten_layer(u_squared[i], mod=mod)
+
+        return res
 
     @abc.abstractmethod
     def flatten_layer(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
@@ -91,4 +111,3 @@ class BaseNonStationaryScheme(BaseScheme):
         Returns:
             what function returns
         """
-        ## TODO

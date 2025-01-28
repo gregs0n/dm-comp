@@ -48,7 +48,7 @@ class FDMStationaryScheme(BaseStationaryScheme):
         Main method to solve the scheme
 
         Args:
-            tol: absolute tolerance of Newton's method. 
+            tol: absolute tolerance of Newton's method.
             u0_squared: start point for computing the result.
                 Explicitly pass like keyword argument.
         Returns:
@@ -57,10 +57,7 @@ class FDMStationaryScheme(BaseStationaryScheme):
         # inner_tol = kwargs.get("inner_tol", 5e-4)
         u0 = kwargs.get("u0_squared", 300.0 * np.ones(np.prod(self.square_shape)))
         H0_linear = self.stef_bolc * np.power(u0.flatten() / self.w, 4)
-        A = LinearOperator(
-            (H0_linear.size, H0_linear.size),
-            matvec=self.operator
-        )
+        A = LinearOperator((H0_linear.size, H0_linear.size), matvec=self.operator)
         b = (self.F + self.G).flatten()
         R = b - self.operator(H0_linear)
         res, exit_code = bicgstab(
@@ -152,6 +149,7 @@ class FDMStationaryScheme(BaseStationaryScheme):
         material: Material,
         limits: list[np.float64, np.float64],
         stef_bolc: np.float64,
+        **kwargs
     ):
         """
         Static function to obtain F and G arrays.
@@ -162,11 +160,11 @@ class FDMStationaryScheme(BaseStationaryScheme):
             g_func: list of 4 functions g(x, y) for the bound temperature:
                 [
                     g(x=[a,b], y=a),
-                    
+
                     g(x=b, y=[a, b]),
-                    
+
                     g(x=[a,b], y=b),
-                    
+
                     g(x=a, y=[a,b])
                 ]
             square_shape: shape of the scheme.

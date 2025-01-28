@@ -24,6 +24,7 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         G: np.ndarray,
         square_shape: tuple[int, int, int, int],
         material: Material,
+        dt: np.float64,
         limits: list[np.float64, np.float64, np.float64],
     ):
         """
@@ -34,7 +35,7 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         Returns:
             what function returns
         """
-        super().__init__(F, G, square_shape, material, limits)
+        super().__init__(F, G, square_shape, material, dt, limits)
 
         cells = self.square_shape[0]
         cell_size = self.square_shape[2]
@@ -141,8 +142,9 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         g_func: list,
         square_shape: tuple,
         material: Material,
-        limits: list,
+        limits: list[np.float64, np.float64, np.float64],
         stef_bolc: np.float64,
+        **kwargs
     ) -> list[np.ndarray, np.ndarray]:
         """
         Abstract static function to obtain F and G arrays
@@ -152,7 +154,45 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         Returns:
             [F, G]
         """
-        ## TODO
+        HeatStream = lambda t: stef_bolc * np.power(t, 4)
+
+        f = lambda T, x, y: HeatStream(f_func(T, x, y))
+        g = [
+            lambda T, t: HeatStream(g_func[0](T, t)),
+            lambda T, t: HeatStream(g_func[1](T, t)),
+            lambda T, t: HeatStream(g_func[2](T, t)),
+            lambda T, t: HeatStream(g_func[3](T, t)),
+        ]
+
+        ############
+
+        cells = square_shape[0]
+        cell_size = square_shape[2]
+        h = (limits[1] - limits[0]) / ((cell_size - 1) * cells)
+        dt = kwargs.get("dt", 0.1)
+        t_array = np.arange(0, limits[2] + 0.5*dt, dt)
+
+        F: np.ndarray = np.zeros((t_array.size, *square_shape))
+        G: np.ndarray = np.zeros((t_array.size, *square_shape))
+
+        for (layer, t_arg) in enumerate(t_array):
+            for i in range(cells):
+                for j in range(cells):
+                    for i2 in range(cell_size):
+                        for j2 in range(cell_size):
+                            F[layer, i, j, i2, j2] = f(
+                                t_arg,
+                                (i * (cell_size - 1) + i2) * h,
+                                (j * (cell_size - 1) + j2) * h,
+                            )
+            for k in range(cells):
+                for k2 in range(cell_size):
+                    G[layer, k, 0, k2, 0] = g[0](t_arg, (k * (cell_size - 1) + k2) * h)
+                    G[layer, k, -1, k2, -1] = g[2](t_arg, (k * (cell_size - 1) + k2) * h)
+                    G[layer, 0, k, 0, k2] = g[3](t_arg, (k * (cell_size - 1) + k2) * h)
+                    G[layer, -1, k, -1, k2] = g[1](t_arg, (k * (cell_size - 1) + k2) * h)
+
+        return [F, G]
 
     def flatten_layer(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
         """
@@ -163,4 +203,4 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         Returns:
             what function returns
         """
-        ## TODO
+        return DirectStationaryScheme.flatten(self, u_squared, kwargs["mod"])

@@ -55,7 +55,7 @@ class SDMStationaryScheme(BaseStationaryScheme):
         Main method to solve the scheme
 
         Args:
-            tol: absolute tolerance of Newton's method. 
+            tol: absolute tolerance of Newton's method.
             inner_tol: relative tolerance for bicgstab.
                 Explicitly pass like keyword argument.
             u0_squared: start point for computing the result.
@@ -285,6 +285,7 @@ class SDMStationaryScheme(BaseStationaryScheme):
         material: Material,
         limits: list[np.float64, np.float64],
         stef_bolc: np.float64,
+        **kwargs
     ):
         """
         Static function to obtain F and G arrays.
@@ -295,11 +296,11 @@ class SDMStationaryScheme(BaseStationaryScheme):
             g_func: list of 4 functions g(x, y) for the bound temperature:
                 [
                     g(x=[a,b], y=a),
-                    
+
                     g(x=b, y=[a, b]),
-                    
+
                     g(x=[a,b], y=b),
-                    
+
                     g(x=a, y=[a,b])
                 ]
             square_shape: shape of the scheme.

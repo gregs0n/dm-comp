@@ -83,7 +83,7 @@ class BaseScheme(abc.ABC):
         Returns:
             Jac(U, dU)
         """
-    
+
     @abc.abstractmethod
     def flatten(self, u_squared: np.ndarray, *args, **kwargs):
         """
@@ -105,6 +105,7 @@ class BaseScheme(abc.ABC):
         material: Material,
         limits: list,
         stef_bolc: np.float64,
+        **kwargs
     ) -> list[np.ndarray, np.ndarray]:
         """
         Abstract static function to obtain F and G arrays.
@@ -115,11 +116,11 @@ class BaseScheme(abc.ABC):
             g_func: list of 4 functions g(x, y) for the bound temperature:
                 [
                     g(x=[a,b], y=a),
-                    
+
                     g(x=b, y=[a, b]),
-                    
+
                     g(x=[a,b], y=b),
-                    
+
                     g(x=a, y=[a,b])
                 ]
             square_shape: shape of the scheme. [n, n] for discrete methods
