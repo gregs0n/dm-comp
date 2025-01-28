@@ -1,5 +1,5 @@
 """
-Module template docstring
+SDMStationaryScheme class module.
 """
 
 import numpy as np
@@ -13,7 +13,9 @@ from wraps import timer
 
 class SDMStationaryScheme(BaseStationaryScheme):
     """
-    Class template docstring
+    Second Discrete Method's Scheme.
+    Helps to compute the result faster than Direct scheme, but slower
+    than FDM due to tcc (thermal conductivity coefficient) accounting.
     """
 
     def __init__(
@@ -25,12 +27,15 @@ class SDMStationaryScheme(BaseStationaryScheme):
         limits: list[np.float64, np.float64],
     ):
         """
-        Template docstring (EDIT)
-
         Args:
-            arg1: arg1 decsription
+            F: The inner heat
+            G: The bound heat
+            square_shape: shape of the scheme, e.g. [cells, cells].
+            material: namedtuple object for containing material properties
+            limits: description of the computing area.
+                e.g. [a, b] = [0.0, 1.0].
         Returns:
-            what function returns
+            the instance of the FDMStationaryScheme class.
         """
         super().__init__(F, G, square_shape, material, limits)
 
@@ -47,12 +52,16 @@ class SDMStationaryScheme(BaseStationaryScheme):
     @timer
     def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Main method to solve the scheme
 
         Args:
-            arg1: arg1 decsription
+            tol: absolute tolerance of Newton's method. 
+            inner_tol: relative tolerance for bicgstab.
+                Explicitly pass like keyword argument.
+            u0_squared: start point for computing the result.
+                Explicitly pass like keyword argument.
         Returns:
-            what function returns
+            The solution of the scheme.
         """
 
         self.H, self.dH = SDMStationaryScheme.createH(
@@ -110,12 +119,15 @@ class SDMStationaryScheme(BaseStationaryScheme):
 
     def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Computes A(u), where A - is the differential equations system's scheme operator
+        (non linear).
+
+        Use in solve to get (R)esidual = b - A(u)
 
         Args:
-            arg1: arg1 decsription
+            u_linear: 1-d array of the u - temperature.
         Returns:
-            what function returns
+            res: 1-d array of the A(u).
         """
         u = u_linear.reshape(self.square_shape)
         res = np.zeros_like(u)
@@ -170,12 +182,15 @@ class SDMStationaryScheme(BaseStationaryScheme):
 
     def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Computes gradient value in the U-point of A-operator.
+        Use in Newton's method by BiCGstab as matvec to find newton's dU.
+        For computing uses current newton's approx of the U-function.
 
         Args:
-            arg1: arg1 decsription
+            u_linear: 1d-shape array of U function.
+            du_linear: 1d-shape array of dU function.
         Returns:
-            what function returns
+            Jac(U, dU): 1d_shape array.
         """
         u = u_linear.reshape(self.square_shape)
         du = du_linear.reshape(self.square_shape)
@@ -272,12 +287,27 @@ class SDMStationaryScheme(BaseStationaryScheme):
         stef_bolc: np.float64,
     ):
         """
-        Template docstring (EDIT)
+        Static function to obtain F and G arrays.
+        Parameters are the same as in __init__()
 
         Args:
-            arg1: arg1 decsription
+            f_func: the temperature of the inner heat sources.
+            g_func: list of 4 functions g(x, y) for the bound temperature:
+                [
+                    g(x=[a,b], y=a),
+                    
+                    g(x=b, y=[a, b]),
+                    
+                    g(x=[a,b], y=b),
+                    
+                    g(x=a, y=[a,b])
+                ]
+            square_shape: shape of the scheme.
+                Template - [cells, cells, cell_size, cell_size].
+            limits: description of the computing area, [a, b] for
+                stationary schemes.
         Returns:
-            what function returns
+            [F, G]
         """
         h: np.float64 = (limits[1] - limits[0]) / square_shape[0]
 
@@ -373,11 +403,7 @@ class SDMStationaryScheme(BaseStationaryScheme):
 
     def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
+        does nothing, used nowhere.
+        May be removed soon.
         """
         return u_squared

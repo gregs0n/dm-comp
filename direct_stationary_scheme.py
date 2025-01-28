@@ -1,5 +1,5 @@
 """
-Module template docstring
+Direct Stationary Scheme class module.
 """
 
 import numpy as np
@@ -13,7 +13,11 @@ from wraps import timer
 
 class DirectStationaryScheme(BaseStationaryScheme):
     """
-    Class template docstring
+    Direct Stationary scheme - scheme to obtain the most exact solution
+    of the complex heat conductivity sationary question in
+    2d slice of the square rods square pack.
+
+    Used to compare other approx schemes' correctness
     """
 
     def __init__(
@@ -25,15 +29,14 @@ class DirectStationaryScheme(BaseStationaryScheme):
         limits: list[np.float64, np.float64],
     ):
         """
-        Calculate the square root of a number.
-
         Args:
-            F: The density of the inner heat sources
-            G: The density of the bound heat sources
+            F: The inner heat
+            G: The bound heat
             square_shape: shape of the scheme. [n, n] for discrete methods
                 and [n, n, m, m] for direct.
             material: namedtuple object for containing material properties
-            limits: description of the computing area, e.g. [0.0, 1.0]
+            limits: description of the computing area, [a, b] for
+                stationary schemes and [a, b, T] for non-stationary
         Returns:
             the instance of the DirectStationaryScheme class.
         """
@@ -52,12 +55,16 @@ class DirectStationaryScheme(BaseStationaryScheme):
     @timer
     def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Main method to solve the scheme
 
         Args:
-            arg1: arg1 decsription
+            tol: absolute tolerance of Newton's method. 
+            inner_tol: relative tolerance for bicgstab.
+                Explicitly pass like keyword argument.
+            u0_squared: start point for computing the result.
+                Explicitly pass like keyword argument.
         Returns:
-            what function returns
+            The solution of the scheme.
         """
 
         inner_tol = kwargs.get("inner_tol", 5e-4)
@@ -113,12 +120,15 @@ class DirectStationaryScheme(BaseStationaryScheme):
 
     def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Computes A(u), where A - is the differential equations system's scheme operator
+        (non linear).
+
+        Use in solve to get (R)esidual = b - A(u)
 
         Args:
-            arg1: arg1 decsription
+            u_linear: 1-d array of the u - temperature.
         Returns:
-            what function returns
+            res: 1-d array of the A(u).
         """
         u = u_linear.reshape(self.square_shape)
         res = np.zeros_like(u)
@@ -209,12 +219,15 @@ class DirectStationaryScheme(BaseStationaryScheme):
 
     def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Computes gradient value in the U-point of A-operator.
+        Use in Newton's method by BiCGstab as matvec to find newton's dU.
+        For computing uses current newton's approx of the U-function.
 
         Args:
-            arg1: arg1 decsription
+            u_linear: 1d-shape array of U function.
+            du_linear: 1d-shape array of dU function.
         Returns:
-            what function returns
+            Jac(U, dU): 1d_shape array.
         """
         u = u_linear.reshape(self.square_shape)
         du = du_linear.reshape(self.square_shape)
@@ -343,12 +356,27 @@ class DirectStationaryScheme(BaseStationaryScheme):
         stef_bolc: np.float64,
     ):
         """
-        Template docstring (EDIT)
+        Static function to obtain F and G arrays.
+        Parameters are the same as in __init__()
 
         Args:
-            arg1: arg1 decsription
+            f_func: the temperature of the inner heat sources.
+            g_func: list of 4 functions g(x, y) for the bound temperature:
+                [
+                    g(x=[a,b], y=a),
+                    
+                    g(x=b, y=[a, b]),
+                    
+                    g(x=[a,b], y=b),
+                    
+                    g(x=a, y=[a,b])
+                ]
+            square_shape: shape of the scheme.
+                Template - [cells, cells, cell_size, cell_size].
+            limits: description of the computing area, [a, b] for
+                stationary schemes.
         Returns:
-            what function returns
+            [F, G]
         """
         HeatStream = lambda t: stef_bolc * np.power(t, 4)
 
@@ -388,12 +416,15 @@ class DirectStationaryScheme(BaseStationaryScheme):
 
     def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Method to change solutions to the [cells, cells] format.
+        
 
         Args:
-            arg1: arg1 decsription
+            u_squared: self.square_shape-like np.ndarray object.
+            mod: if mod=0 - just makes plain 2-d array for heatmap.
+                if mod=1 approximatly integrates U across each cell.
         Returns:
-            what function returns
+            u_flat: ndarray with shape (*self.square_shape[:2])
         """
         mod = kwargs.get("mod", 0)
         cells = self.square_shape[0]

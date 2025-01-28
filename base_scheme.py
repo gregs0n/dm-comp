@@ -1,5 +1,5 @@
 """
-Base Scheme class module
+Base Scheme class module.
 """
 
 import abc
@@ -24,6 +24,15 @@ class BaseScheme(abc.ABC):
     ):
         """
         Base initializer of every derivative scheme.
+
+        Args:
+            F: The inner heat
+            G: The bound heat
+            square_shape: shape of the scheme. [n, n] for discrete methods
+                and [n, n, m, m] for direct.
+            material: namedtuple object for containing material properties
+            limits: description of the computing area, [a, b] for
+                stationary schemes and [a, b, T] for non-stationary
         """
         self.F = F
         self.G = G
@@ -44,7 +53,8 @@ class BaseScheme(abc.ABC):
 
         Args:
             tol: absolute tolerance of Newton's method.
-            u0_squared: start point for computing the result
+            u0_squared: start point for computing the result.
+                Explicitly pass like keyword argument.
         Returns:
             The solution of the scheme.
         """
@@ -64,12 +74,26 @@ class BaseScheme(abc.ABC):
     def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
         Abstract method for operator's jacobian of the scheme.
-        Use in Newton's method. For computing uses last newton's approx of the U-function
+        Use in Newton's method by BiCGstab as matvec.
+        For computing uses current newton's approx of the U-function
 
         Args:
+            u_linear: 1d-shape array of U function.
             du_linear: 1d-shape array of dU function.
         Returns:
-            Jac(du, U)
+            Jac(U, dU)
+        """
+    
+    @abc.abstractmethod
+    def flatten(self, u_squared: np.ndarray, *args, **kwargs):
+        """
+        Abstract method to change solutions to the [cells, cells] format.
+        Does nothing in FDM and SDM schemes.
+
+        Args:
+            u_squared: self.square_shape-like np.ndarray object.
+        Returns:
+            res: ndarray with shape (*self.square_shape[:2])
         """
 
     @staticmethod
@@ -83,10 +107,25 @@ class BaseScheme(abc.ABC):
         stef_bolc: np.float64,
     ) -> list[np.ndarray, np.ndarray]:
         """
-        Abstract static function to obtain F and G arrays
+        Abstract static function to obtain F and G arrays.
+        Parameters are the same as in __init__()
 
         Args:
-            f_func
+            f_func: the temperature of the inner heat sources.
+            g_func: list of 4 functions g(x, y) for the bound temperature:
+                [
+                    g(x=[a,b], y=a),
+                    
+                    g(x=b, y=[a, b]),
+                    
+                    g(x=[a,b], y=b),
+                    
+                    g(x=a, y=[a,b])
+                ]
+            square_shape: shape of the scheme. [n, n] for discrete methods
+                and [n, n, m, m] for direct.
+            limits: description of the computing area, [a, b] for
+                stationary schemes and [a, b, T] for non-stationary
         Returns:
             [F, G]
         """
@@ -94,24 +133,14 @@ class BaseScheme(abc.ABC):
     @property
     def normed(self):
         """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
+        `normed` property getter
         """
         return self.__normed
 
     @normed.setter
     def normed(self, flag):
         """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
+        `normed` property setter.
         """
         self.__normed = flag
         self.w = 100 if self.__normed else 1

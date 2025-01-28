@@ -1,5 +1,5 @@
 """
-Module template docstring
+Base Stationary Scheme class module.
 """
 
 import abc
@@ -10,21 +10,12 @@ from base_scheme import BaseScheme
 
 class BaseStationaryScheme(BaseScheme):
     """
-    Class template docstring
+    Class for logic contingency of the project.
+    For each Sationary scheme BaseScheme's interface is enough.
+    May be removed soon.
     """
 
     def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
-        """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
-        """
-
-    @abc.abstractmethod
-    def flatten(self, u_squared: np.ndarray, *args, **kwargs):
         """
         Template docstring (EDIT)
 

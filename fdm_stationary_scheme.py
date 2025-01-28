@@ -1,5 +1,5 @@
 """
-Module template docstring
+FDMStationaryScheme class module.
 """
 
 import numpy as np
@@ -13,7 +13,10 @@ from wraps import timer
 
 class FDMStationaryScheme(BaseStationaryScheme):
     """
-    Class template docstring
+    First Discrete Method's Scheme.
+    Helps to compute the result much faster than Direct scheme.
+    Does not use tcc (thermal conductivity coefficient),
+    what makes the result much worse with small tcc-s.
     """
 
     def __init__(
@@ -25,12 +28,15 @@ class FDMStationaryScheme(BaseStationaryScheme):
         limits: list[np.float64, np.float64],
     ):
         """
-        Template docstring (EDIT)
-
         Args:
-            arg1: arg1 decsription
+            F: The inner heat
+            G: The bound heat
+            square_shape: shape of the scheme, e.g. [cells, cells].
+            material: namedtuple object for containing material properties
+            limits: description of the computing area.
+                e.g. [a, b] = [0.0, 1.0].
         Returns:
-            what function returns
+            the instance of the FDMStationaryScheme class.
         """
         super().__init__(F, G, square_shape, material, limits)
         cells = self.square_shape[0]
@@ -39,12 +45,14 @@ class FDMStationaryScheme(BaseStationaryScheme):
     @timer
     def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Main method to solve the scheme
 
         Args:
-            arg1: arg1 decsription
+            tol: absolute tolerance of Newton's method. 
+            u0_squared: start point for computing the result.
+                Explicitly pass like keyword argument.
         Returns:
-            what function returns
+            The solution of the scheme.
         """
         # inner_tol = kwargs.get("inner_tol", 5e-4)
         u0 = kwargs.get("u0_squared", 300.0 * np.ones(np.prod(self.square_shape)))
@@ -70,12 +78,14 @@ class FDMStationaryScheme(BaseStationaryScheme):
 
     def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Main scheme's operator. The whole scheme solves the equation
+        in H-values - heat streams. An after that the whole
+        H-array comes to the temperature values (at the end of teh solve-method).
 
         Args:
-            arg1: arg1 decsription
+            u_linear: 1-d array of the H - heat stream of the cell.
         Returns:
-            what function returns
+            A(H)
         """
         H = u_linear.reshape(self.square_shape)
         res = np.zeros_like(H)
@@ -129,12 +139,8 @@ class FDMStationaryScheme(BaseStationaryScheme):
 
     def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
+        does nothing, used nowhere.
+        May be removed soon.
         """
         return du_linear
 
@@ -148,12 +154,27 @@ class FDMStationaryScheme(BaseStationaryScheme):
         stef_bolc: np.float64,
     ):
         """
-        Template docstring (EDIT)
+        Static function to obtain F and G arrays.
+        Parameters are the same as in __init__()
 
         Args:
-            arg1: arg1 decsription
+            f_func: the temperature of the inner heat sources.
+            g_func: list of 4 functions g(x, y) for the bound temperature:
+                [
+                    g(x=[a,b], y=a),
+                    
+                    g(x=b, y=[a, b]),
+                    
+                    g(x=[a,b], y=b),
+                    
+                    g(x=a, y=[a,b])
+                ]
+            square_shape: shape of the scheme.
+                Template - [cells, cells, cell_size, cell_size].
+            limits: description of the computing area, [a, b] for
+                stationary schemes.
         Returns:
-            what function returns
+            [F, G]
         """
         HeatStream = lambda t: stef_bolc * np.power(t, 4)
         # f = lambda x, y: HeatStream(f_func(x, y))
@@ -205,11 +226,7 @@ class FDMStationaryScheme(BaseStationaryScheme):
 
     def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
+        does nothing, used nowhere.
+        May be removed soon.
         """
         return u_squared
