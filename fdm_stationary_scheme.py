@@ -149,7 +149,7 @@ class FDMStationaryScheme(BaseStationaryScheme):
         material: Material,
         limits: list[np.float64, np.float64],
         stef_bolc: np.float64,
-        **kwargs
+        **kwargs,
     ):
         """
         Static function to obtain F and G arrays.

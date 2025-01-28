@@ -84,7 +84,7 @@ class BaseNonStationaryScheme(BaseScheme):
             what function returns
         """
         mod = kwargs.get("mod", 0)
-        if mod > 1 or len(u_squared.shape) != 5 :
+        if mod > 1 or len(u_squared.shape) != 5:
             return u_squared
 
         cells = self.square_shape[0]

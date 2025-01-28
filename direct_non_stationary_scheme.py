@@ -144,7 +144,7 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         material: Material,
         limits: list[np.float64, np.float64, np.float64],
         stef_bolc: np.float64,
-        **kwargs
+        **kwargs,
     ) -> list[np.ndarray, np.ndarray]:
         """
         Abstract static function to obtain F and G arrays
@@ -170,12 +170,12 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         cell_size = square_shape[2]
         h = (limits[1] - limits[0]) / ((cell_size - 1) * cells)
         dt = kwargs.get("dt", 0.1)
-        t_array = np.arange(0, limits[2] + 0.5*dt, dt)
+        t_array = np.arange(0, limits[2] + 0.5 * dt, dt)
 
         F: np.ndarray = np.zeros((t_array.size, *square_shape))
         G: np.ndarray = np.zeros((t_array.size, *square_shape))
 
-        for (layer, t_arg) in enumerate(t_array):
+        for layer, t_arg in enumerate(t_array):
             for i in range(cells):
                 for j in range(cells):
                     for i2 in range(cell_size):
@@ -188,9 +188,13 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
             for k in range(cells):
                 for k2 in range(cell_size):
                     G[layer, k, 0, k2, 0] = g[0](t_arg, (k * (cell_size - 1) + k2) * h)
-                    G[layer, k, -1, k2, -1] = g[2](t_arg, (k * (cell_size - 1) + k2) * h)
+                    G[layer, k, -1, k2, -1] = g[2](
+                        t_arg, (k * (cell_size - 1) + k2) * h
+                    )
                     G[layer, 0, k, 0, k2] = g[3](t_arg, (k * (cell_size - 1) + k2) * h)
-                    G[layer, -1, k, -1, k2] = g[1](t_arg, (k * (cell_size - 1) + k2) * h)
+                    G[layer, -1, k, -1, k2] = g[1](
+                        t_arg, (k * (cell_size - 1) + k2) * h
+                    )
 
         return [F, G]
 

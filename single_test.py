@@ -44,13 +44,14 @@ def GetStatFunc():
     ]
     return f, g
 
+
 def GetNonStatFunc(T: np.float64):
     """
     pass
     """
 
     arg = np.linspace(0, T, 100)
-    activation = lambda t: 0.5 + 0.5*np.sin(np.pi*(t-0.5*T)/T)
+    activation = lambda t: 0.5 + 0.5 * np.sin(np.pi * (t - 0.5 * T) / T)
     data = activation(arg)
     draw1D([data], [0, T], "activation", ylim=[-0.05, 1.05])
     f_stat, g_stat = GetStatFunc()
@@ -60,7 +61,7 @@ def GetNonStatFunc(T: np.float64):
         lambda T, t: activation(T) * g_stat[0](t),
         lambda T, t: activation(T) * g_stat[1](t),
         lambda T, t: activation(T) * g_stat[2](t),
-        lambda T, t: activation(T) * g_stat[3](t)
+        lambda T, t: activation(T) * g_stat[3](t),
     ]
     return f, g
 
@@ -95,6 +96,7 @@ def main_stat():
     res = scheme.flatten(res, mod=0)
 
     drawHeatmap(res, limits, "plot", show_plot=1)  # , zlim=[300, 600])
+
 
 def main_non_stat():
     """

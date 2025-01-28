@@ -63,22 +63,28 @@ def drawHeatmap(
     plt.close()
     del fig, ax
 
+
 def drawGif(data):
     print(data.shape)
+
     def my_func(i):
         ax.cla()
-        sns.heatmap(data[i, ...],
-                    ax = ax,
-                    cbar = True,
-                    cmap="RdBu_r",
-                    cbar_ax = cbar_ax,
-                    vmin = 300,
-                    vmax = 600,
-                    square = True)
+        sns.heatmap(
+            data[i, ...],
+            ax=ax,
+            cbar=True,
+            cmap="RdBu_r",
+            cbar_ax=cbar_ax,
+            vmin=300,
+            vmax=600,
+            square=True,
+        )
 
-    grid_kws = {'width_ratios': (0.9, 0.05), 'wspace': 0.2}
-    fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw = grid_kws, figsize = (12, 8))
-    anim = FuncAnimation(fig = fig, func = my_func, frames = data.shape[0], interval = 10, blit = False)
+    grid_kws = {"width_ratios": (0.9, 0.05), "wspace": 0.2}
+    fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw=grid_kws, figsize=(12, 8))
+    anim = FuncAnimation(
+        fig=fig, func=my_func, frames=data.shape[0], interval=10, blit=False
+    )
     writergif = PillowWriter(fps=20)
     # anim.save('plot_00.gif', writer=writergif)
     plt.show()
