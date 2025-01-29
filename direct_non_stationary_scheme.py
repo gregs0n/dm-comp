@@ -176,15 +176,15 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         G: np.ndarray = np.zeros((t_array.size, *square_shape))
 
         for layer, t_arg in enumerate(t_array):
-            for i in range(cells):
-                for j in range(cells):
-                    for i2 in range(cell_size):
-                        for j2 in range(cell_size):
-                            F[layer, i, j, i2, j2] = f(
-                                t_arg,
-                                (i * (cell_size - 1) + i2) * h,
-                                (j * (cell_size - 1) + j2) * h,
-                            )
+            # for i in range(cells):
+            #     for j in range(cells):
+            #         for i2 in range(cell_size):
+            #             for j2 in range(cell_size):
+            #                 F[layer, i, j, i2, j2] = f(
+            #                     t_arg,
+            #                     (i * (cell_size - 1) + i2) * h,
+            #                     (j * (cell_size - 1) + j2) * h,
+            #                 )
             for k in range(cells):
                 for k2 in range(cell_size):
                     G[layer, k, 0, k2, 0] = g[0](t_arg, (k * (cell_size - 1) + k2) * h)
@@ -207,4 +207,4 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         Returns:
             what function returns
         """
-        return DirectStationaryScheme.flatten(self, u_squared, kwargs["mod"])
+        return DirectStationaryScheme.flatten(self, u_squared, mod=kwargs["mod"])

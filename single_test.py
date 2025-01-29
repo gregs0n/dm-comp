@@ -31,38 +31,86 @@ def GetStatFunc():
     tmin = 300.0 / w
     coef = tmax - tmin
     d = tmin
+
+    L = 1.0
+    a, b = 0.0, 0.5
+    g_kernel = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
+
+    left_g = lambda t: (
+        g_kernel((2 * t - 0.5 * (b - a)) / (b - a)) if a <= t <= b else 0.0
+    )
+
+    right_g = lambda t: (
+        g_kernel((2 * (L - t) - 0.5 * (b - a)) / (b - a))
+        if (1.0 - b) <= t <= (1.0 - a)
+        else 0.0
+    )
+
     f = lambda x, y: 0.0
     g = [
-        lambda t: ((d + coef * np.sin(np.pi * t / 0.3)) if 0.0 <= t <= 0.3 else tmin),
+        lambda t: (d + coef * left_g(t)),
         # lambda t: tmax,
         lambda t: tmin,
-        lambda t: (
-            (d + coef * np.sin(np.pi * (1.0 - t) / 0.3)) if 0.7 <= t <= 1.0 else tmin
-        ),
+        lambda t: (d + coef * right_g(t)),
         lambda t: tmin,
         # lambda t: tmin,
     ]
     return f, g
 
 
-def GetNonStatFunc(T: np.float64):
+def GetNonStatFunc(timeBnd: np.float64, dt: np.float64):
     """
     pass
     """
+    w = 100.0
+    tmax = 600.0 / w
+    tmin = 300.0 / w
+    coef = tmax - tmin
+    d = tmin
 
-    arg = np.linspace(0, T, 100)
-    activation = lambda t: 0.5 + 0.5 * np.sin(np.pi * (t - 0.5 * T) / T)
-    data = activation(arg)
-    draw1D([data], [0, T], "activation", ylim=[-0.05, 1.05])
-    f_stat, g_stat = GetStatFunc()
-    f = lambda T, x, y: activation(T) * f_stat(x, y)
+    L = 1.0
+    a, b = 0.0, 0.5
 
+    t_window = 0.75 * timeBnd
+
+    activation_kernel = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
+    # activation_kernel = lambda t: t
+
+    activation = lambda t: (
+        activation_kernel((t - 0.5 * t_window) / t_window) if t < t_window else 1.0
+    )
+    # activation = lambda t: activation_kernel(t / t_window) if t < t_window else 1.0
+
+    g_kernel = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
+
+    left_g = lambda t: (
+        g_kernel((2 * t - 0.5 * (b - a)) / (b - a)) if a <= t <= b else 0.0
+    )
+
+    right_g = lambda t: (
+        g_kernel((2 * (L - t) - 0.5 * (b - a)) / (b - a))
+        if (1.0 - b) <= t <= (1.0 - a)
+        else 0.0
+    )
+
+    f = lambda T, x, y: 0.0
     g = [
-        lambda T, t: activation(T) * g_stat[0](t),
-        lambda T, t: activation(T) * g_stat[1](t),
-        lambda T, t: activation(T) * g_stat[2](t),
-        lambda T, t: activation(T) * g_stat[3](t),
+        lambda T, t: (d + coef * activation(T) * left_g(t)),
+        # lambda T, t: tmax,
+        lambda T, t: tmin,
+        lambda T, t: (d + coef * activation(T) * right_g(t)),
+        lambda T, t: tmin,
+        # lambda T, t: tmin,
     ]
+
+    # arg = np.arange(0, timeBnd + 0.5*dt, dt)
+
+    # draw1D(
+    #     [np.array([activation(x) for x in arg])],
+    #     [0, timeBnd],
+    #     "activation & g_kernel"
+    # )
+
     return f, g
 
 
@@ -70,12 +118,12 @@ def main_stat():
     """
     template docstring
     """
-    k = 2
+    k = 0
     Scheme = stat_schemes[k]
 
     f, g = GetStatFunc()
 
-    cell = 50
+    cell = 10
     cell_size = 11
 
     square_shape = (cell, cell, cell_size, cell_size) if k == 0 else (cell, cell)
@@ -96,25 +144,29 @@ def main_stat():
     res = scheme.flatten(res, mod=0)
 
     drawHeatmap(res, limits, "plot", show_plot=1)  # , zlim=[300, 600])
+    # return F, G, res
 
 
 def main_non_stat():
     """
     template docstring
     """
+
+    # F_stat, G_stat, stat_res = main_stat()
+
     k = 0
     Scheme = non_stat_schemes[k]
 
-    T = 5.0
-    dt = 0.1
-    f, g = GetNonStatFunc(T)
+    T = 1.0
+    dt = 0.01
+    f, g = GetNonStatFunc(T, dt)
 
-    cell = 5
-    cell_size = 6
+    cell = 10
+    cell_size = 11
 
     square_shape = (cell, cell, cell_size, cell_size) if k == 0 else (cell, cell)
 
-    material = Material("template", 1.0, 0.0, 1.0, 10.0)
+    material = Material("template", 1.0, 0.0, 1.0, 1.0)
     limits = (0.0, 1.0, T)
     stef_bolc = 5.67036713
 
@@ -126,17 +178,50 @@ def main_non_stat():
     F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, dt=dt)
     scheme = Scheme(F, G, square_shape, material, dt, limits)
     # scheme.normed = 1
-    print(G.shape)
-    data = BaseNonStationaryScheme.flatten(scheme, G, mod=1)
-    print(data.shape)
-    drawGif(data)
-    exit()
-    res, _ = scheme.solve(1e-6, inner_tol=5e-4)
-    res = scheme.flatten(res, mod=0)
+    res = scheme.solve(1e-6, inner_tol=5e-4)  # , u0_squared=stat_res)
+    res = scheme.flatten(res, mod=1)
 
-    drawGif(res)
+    n_plots = 10
+    n_plots_step = max(1, res.shape[0] // n_plots)
+    for i, layer in enumerate(res[::n_plots_step]):
+        drawHeatmap(
+            layer,
+            scheme.limits[:-1],
+            f"images/direct_non_stat/plot_{i*n_plots_step:03}",
+            show_plot=0,
+            zlim=[300, 600],
+        )
+
+    # drawGif(res)
+
+
+def TestBndFuncs(a=0.0, b=0.3, L=1.0):
+    arg = np.linspace(0, L, 100)
+
+    activation = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
+
+    g_kernel = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
+
+    left_g = lambda t: (
+        g_kernel((2 * t - 0.5 * (b - a)) / (b - a)) if a <= t <= b else 0.0
+    )
+
+    right_g = lambda t: (
+        g_kernel((2 * (L - t) - 0.5 * (b - a)) / (b - a)) if 0.7 <= t <= 1.0 else 0.0
+    )
+    draw1D(
+        [
+            activation((arg - 0.5 * L) / L),
+            g_kernel((2 * arg - 0.5 * L) / L),
+            np.array([left_g(x) for x in arg]),
+            np.array([right_g(x) for x in arg]),
+        ],
+        [0, L],
+        "activation & g_kernel",
+    )
 
 
 if __name__ == "__main__":
     # main_stat()
     main_non_stat()
+    # TestBndFuncs()

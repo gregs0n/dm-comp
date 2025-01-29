@@ -52,10 +52,13 @@ class BaseNonStationaryScheme(BaseScheme):
         inner_tol = kwargs.get("inner_tol", 5e-4)
         U[0] = kwargs.get("u0_squared", 300.0 * np.ones(self.square_shape)) / self.w
 
+        # view_data = self.flatten_layer(self.w*U[self.cur_layer], mod=0)
+        # drawHeatmap(view_data, self.limits[:-1], f"images/direct_non_stat/plot_{self.cur_layer:03}", show_plot=0, zlim=[300, 600])
+
         for self.cur_layer in range(1, U.shape[0]):
-            print(f"[{self.cur_layer:03}]", end="\t")
+            print(f"[{self.cur_layer:03}]", end="")
             U[self.cur_layer] = self.solve_layer(
-                tol, U[self.cur_layer], inner_tol=inner_tol
+                tol, u_prev_squared=U[self.cur_layer - 1], inner_tol=inner_tol
             )
         U *= self.w
 
@@ -90,12 +93,11 @@ class BaseNonStationaryScheme(BaseScheme):
         cells = self.square_shape[0]
         cell_size = self.square_shape[2]
         if mod == 0:
-            res = np.zeros((u_squared.shape[0], cells, cells))
-        else:
             flat_size = cells * cell_size
             flat_shape = (u_squared.shape[0], flat_size, flat_size)
             res = np.zeros(flat_shape)
-
+        else:
+            res = np.zeros((u_squared.shape[0], cells, cells))
         for i in range(u_squared.shape[0]):
             res[i] = self.flatten_layer(u_squared[i], mod=mod)
 
