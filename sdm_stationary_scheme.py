@@ -8,7 +8,6 @@ from scipy.sparse.linalg import LinearOperator, bicgstab
 
 from base_stationary_scheme import BaseStationaryScheme
 from enviroment import Material
-from wraps import timer
 
 
 class SDMStationaryScheme(BaseStationaryScheme):
@@ -49,73 +48,7 @@ class SDMStationaryScheme(BaseStationaryScheme):
             self.h, 2.0 * self.material.thermal_cond, self.stef_bolc
         )
 
-    @timer
-    def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
-        """
-        Main method to solve the scheme
-
-        Args:
-            tol: absolute tolerance of Newton's method.
-            inner_tol: relative tolerance for bicgstab.
-                Explicitly pass like keyword argument.
-            u0_squared: start point for computing the result.
-                Explicitly pass like keyword argument.
-        Returns:
-            The solution of the scheme.
-        """
-
-        self.H, self.dH = SDMStationaryScheme.createH(
-            self.h, self.material.thermal_cond, self.stef_bolc
-        )
-        self.B, self.dB = SDMStationaryScheme.createH(
-            self.h, 2.0 * self.material.thermal_cond, self.stef_bolc
-        )
-
-        inner_tol = kwargs.get("inner_tol", 5e-4)
-        u0 = kwargs.get("u0_squared", 300.0 * np.ones(np.prod(self.square_shape)))
-        U = u0.flatten() / self.w
-
-        A = LinearOperator(
-            (U.size, U.size),
-            matvec=lambda du: self.jacobian(U, du),
-        )
-        b = (self.F + self.G).flatten()
-        R = b - self.operator(U)
-
-        dU, exit_code = bicgstab(
-            A,
-            R,
-            rtol=inner_tol,
-            atol=0.0,
-            x0=R,
-        )
-        if exit_code:
-            print(f"jacobian Failed with exit code: {exit_code} ON THE START")
-            U = (self.w * U).reshape(self.square_shape)
-            return U, exit_code
-
-        err = np.abs(dU).max()
-        print(f"{err:.3e}")
-        while err > tol:
-            U += dU
-            R = b - self.operator(U)
-            dU, exit_code = bicgstab(
-                A,
-                R,
-                rtol=inner_tol,
-                atol=0.0,
-                x0=dU,
-            )
-            if exit_code:
-                print(f"jacobian FAILED with exit code: {exit_code}")
-                print(f"final error: {err:.3e}")
-                U += dU
-                U = (self.w * U).reshape(self.square_shape)
-                return U, exit_code
-            err = np.abs(dU).max()
-            print(f"{err:.3e}")
-        U = (self.w * U).reshape(self.square_shape)
-        return U, exit_code
+        self.b = (self.F + self.G).flatten()
 
     def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
