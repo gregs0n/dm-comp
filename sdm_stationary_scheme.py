@@ -4,7 +4,6 @@ SDMStationaryScheme class module.
 
 import numpy as np
 from scipy.integrate import quad  # , nquad
-from scipy.sparse.linalg import LinearOperator, bicgstab
 
 from base_stationary_scheme import BaseStationaryScheme
 from enviroment import Material
@@ -48,7 +47,6 @@ class SDMStationaryScheme(BaseStationaryScheme):
             self.h, 2.0 * self.material.thermal_cond, self.stef_bolc
         )
 
-        self.b = (self.F + self.G).flatten()
 
     def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """

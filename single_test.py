@@ -143,7 +143,7 @@ def main_stat():
     res, _ = scheme.solve(1e-6, inner_tol=5e-4)
     res = scheme.flatten(res, mod=0)
 
-    drawHeatmap(res, limits, "plot", show_plot=1)  # , zlim=[300, 600])
+    drawHeatmap(res, limits, "images/plot", show_plot=0)  # , zlim=[300, 600])
     # return F, G, res
 
 
@@ -222,6 +222,6 @@ def TestBndFuncs(a=0.0, b=0.3, L=1.0):
 
 
 if __name__ == "__main__":
-    # main_stat()
-    main_non_stat()
+    main_stat()
+    # main_non_stat()
     # TestBndFuncs()
