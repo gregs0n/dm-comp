@@ -2,7 +2,7 @@
 Module template docstring
 """
 
-import abc
+from abc import abstractmethod
 import numpy as np
 
 from base_scheme import BaseScheme
@@ -64,7 +64,7 @@ class BaseNonStationaryScheme(BaseScheme):
 
         return U
 
-    @abc.abstractmethod
+    @abstractmethod
     def solve_layer(
         self, tol: np.float64, u_prev_squared: np.ndarray, *args, **kwargs
     ) -> np.ndarray:
@@ -103,7 +103,7 @@ class BaseNonStationaryScheme(BaseScheme):
 
         return res
 
-    @abc.abstractmethod
+    @abstractmethod
     def flatten_layer(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
         """
         Template docstring (EDIT)

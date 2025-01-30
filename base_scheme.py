@@ -2,13 +2,13 @@
 Base Scheme class module.
 """
 
-import abc
+from abc import ABC, abstractmethod
 import numpy as np
 
 from enviroment import Material
 
 
-class BaseScheme(abc.ABC):
+class BaseScheme(ABC):
     """
     Class for containing common methods and attributes of
     different schemes from various diff equations tasks
@@ -48,7 +48,7 @@ class BaseScheme(abc.ABC):
         self.w = 100.0
         self.stef_bolc = 5.67036713
 
-    @abc.abstractmethod
+    @abstractmethod
     def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
         """
         Abstarct method for solving schemes
@@ -61,7 +61,7 @@ class BaseScheme(abc.ABC):
             The solution of the scheme.
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
         Abstract method for operator of the scheme.
@@ -72,7 +72,7 @@ class BaseScheme(abc.ABC):
             A(u), where A - is the differential system's scheme operator
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
         Abstract method for operator's jacobian of the scheme.
@@ -86,7 +86,7 @@ class BaseScheme(abc.ABC):
             Jac(U, dU)
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def flatten(self, u_squared: np.ndarray, *args, **kwargs):
         """
         Abstract method to change solutions to the [cells, cells] format.
@@ -99,7 +99,7 @@ class BaseScheme(abc.ABC):
         """
 
     @staticmethod
-    @abc.abstractmethod
+    @abstractmethod
     def GetBoundaries(
         f_func,
         g_func: list,
