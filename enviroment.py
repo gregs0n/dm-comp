@@ -29,10 +29,10 @@ class Test:
     params: TestParams
     data: dict[str, np.ndarray]
 
-    def __str__(self):
-        return f"square_shape{self.params.square_shape}_tcc({self.params.thermal_cond:04.1f})"
+    def __repr__(self):
+        return f"tcc({self.params.thermal_cond:04.1f})_shape{self.params.square_shape}"
 
-    def getHash(self):
+    def get_hash(self):
         """
         Template docstring (EDIT)
 
@@ -43,7 +43,7 @@ class Test:
         """
         return f"{abs(hash(self.params)):0>16x}"
 
-    def save(self, path: str = ""):
+    def save(self, folder: str = ""):
         """
         Template docstring (EDIT)
 
@@ -52,7 +52,7 @@ class Test:
         Returns:
             what function returns
         """
-        file_path = path + self.getHash() + ".bin"
-        print(file_path)
+        file_path = folder + self.get_hash() + ".bin"
+        # print(file_path)
         with open(file_path, "wb") as file:
             pickle.dump(self.data, file)

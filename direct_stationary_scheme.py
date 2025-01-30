@@ -3,7 +3,6 @@ Direct Stationary Scheme class module.
 """
 
 import numpy as np
-from scipy.sparse.linalg import LinearOperator, bicgstab
 from numpy import float_power as fpower, fabs
 
 from base_stationary_scheme import BaseStationaryScheme

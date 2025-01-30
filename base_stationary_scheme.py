@@ -4,6 +4,7 @@ Base Stationary Scheme class module.
 
 import numpy as np
 from scipy.sparse.linalg import LinearOperator, bicgstab
+import logging
 
 from base_scheme import BaseScheme
 from wraps import timer
@@ -28,6 +29,8 @@ class BaseStationaryScheme(BaseScheme):
         Returns:
             The solution of the scheme.
         """
+        logger = logging.getLogger()
+
         inner_tol = kwargs.get("inner_tol", 5e-4)
         b = kwargs.get("b", self.b)
         u0 = kwargs.get("u0_squared", 300.0 * np.ones(np.prod(self.square_shape)))
@@ -47,12 +50,12 @@ class BaseStationaryScheme(BaseScheme):
             x0=R,
         )
         if exit_code:
-            print(f"jacobian Failed with exit code: {exit_code} ON THE START")
+            logger.warning("jacobian failed with exit code: %d ON THE START", exit_code)
             U = (self.w * U).reshape(self.square_shape)
             return U, exit_code
 
         err = np.abs(dU).max()
-        print(f"\t{err:.3e}")
+        logger.debug("Newton err: %.3e", err)
         while err > tol:
             U += dU
             R = b - self.operator(U)
@@ -64,12 +67,11 @@ class BaseStationaryScheme(BaseScheme):
                 x0=dU,
             )
             if exit_code:
-                print(f"jacobian FAILED with exit code: {exit_code}")
-                print(f"final error: {err:.3e}")
+                logger.warning("jacobian failed with exit code: %d and final error %.3e", exit_code, err)
                 U += dU
                 U = (self.w * U).reshape(self.square_shape)
                 return U, exit_code
             err = np.abs(dU).max()
-            print(f"\t{err:.3e}")
+            logger.debug("Newton err: %.3e", err)
         U = (self.w * U).reshape(self.square_shape)
         return U, exit_code

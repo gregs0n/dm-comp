@@ -4,6 +4,8 @@ pass
 """
 
 from os import environ
+environ["OMP_NUM_THREADS"] = "4"
+
 import numpy as np
 
 from direct_stationary_scheme import DirectStationaryScheme
@@ -15,8 +17,6 @@ from direct_non_stationary_scheme import DirectNonStationaryScheme
 
 from enviroment import Material  # , TestParams, Test
 from draw import draw1D, drawHeatmap, drawGif
-
-environ["OMP_NUM_THREADS"] = "4"
 
 stat_schemes = [DirectStationaryScheme, FDMStationaryScheme, SDMStationaryScheme]
 non_stat_schemes = [DirectNonStationaryScheme]
@@ -128,7 +128,12 @@ def main_stat():
 
     square_shape = (cell, cell, cell_size, cell_size) if k == 0 else (cell, cell)
 
-    material = Material("template", 1.0, 0.0, 1.0, 1.0)
+    material = Material(
+        "template",
+        thermal_cond=20.0,
+        tmin=0.0, tmax=1.0,
+        crho=1.0
+    )
     limits = (0.0, 1.0)
     stef_bolc = 5.67036713
 
@@ -143,8 +148,8 @@ def main_stat():
     res, _ = scheme.solve(1e-6, inner_tol=5e-4)
     res = scheme.flatten(res, mod=0)
 
-    drawHeatmap(res, limits, "images/plot", show_plot=0)  # , zlim=[300, 600])
-    # return F, G, res
+    drawHeatmap(res, limits, "images/plot", show_plot=1, zlim=[300, 600])
+    return F, G, res
 
 
 def main_non_stat():
