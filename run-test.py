@@ -5,7 +5,6 @@ environ["OMP_NUM_THREADS"] = "4"
 
 import numpy as np
 from itertools import product
-import pickle
 import logging
 
 from direct_stationary_scheme import DirectStationaryScheme
@@ -14,14 +13,20 @@ from single_test import GetStatFunc
 from enviroment import Material, TestParams, Test
 from draw import drawHeatmap
 
-direct_dots = {}
+direct_dots = [
+    0,
+    11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
+    11, 11, 11, 11, 11, 11, 10, 10, 10, 10,
+    11, 10, 11, 11, 11, 11, 11,  9,  9, 10,
+    11, 10,  9, 10, 10, 36, 10,  8, 39, 40,
+    41,  6,  6,  7, 45, 46, 47, 48,  9, 50
+]
 
 logger = logging.getLogger()
 logging.basicConfig(
     filename='direct_test.log',
-    filemode='w',
     encoding='utf-8',
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s\t%(levelname)s::%(message)s',
     datefmt='%d.%m.%Y %H:%M:%S'
 )
@@ -32,7 +37,7 @@ def loadTest():
     result_folder = "direct_results/"
     image_folder = "images/"
 
-    cells = list(range(10, 31))
+    cells = [36, 39, 40, 41, 45, 46, 47, 48, 50]
     thermal_conds = [1.0, 5.0, 10.0, 20.0]
     limits = (0.0, 1.0)
     stef_bolc = 5.67036713
@@ -71,7 +76,7 @@ def loadTest():
                 material,
                 limits
             )
-            res, exit_code = scheme.solve(1e-6)
+            res, exit_code = scheme.solve(1e-6, inner_tol=1e-4)
             if exit_code:
                 cell_size -= 1
 
@@ -84,11 +89,7 @@ def loadTest():
         np.save(result_folder + test.get_hash(), res)
         test.save(test_folder)
 
-        if cell_size < cell_size_start:
-            cell_size_start = cell_size + 1
-
-    with open("direct_dots.bin", "wb") as file:
-        pickle.dump(direct_dots, file)
+        logging.info("SUCCESS - (%d, %d) - %d", cell, cell, cell_size)
 
 
 if __name__ == "__main__":
