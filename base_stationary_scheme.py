@@ -32,16 +32,18 @@ class BaseStationaryScheme(BaseScheme):
         logger = logging.getLogger()
 
         inner_tol = kwargs.get("inner_tol", 5e-4)
-        b = kwargs.get("b", self.b)
         u0 = kwargs.get("u0_squared", 300.0 * np.ones(np.prod(self.square_shape)))
         U = u0.flatten() / self.w
+        b = kwargs.get("b", self.b).flatten()
+        operator = kwargs.get("operator", self.operator)
+        jacobian = kwargs.get("jacobian", self.jacobian)
 
         A = LinearOperator(
             (U.size, U.size),
-            matvec=lambda du: self.jacobian(U, du),
+            matvec=lambda du: jacobian(U, du),
         )
 
-        R = b - self.operator(U)
+        R = b - operator(U)
         dU, exit_code = bicgstab(
             A,
             R,
@@ -58,7 +60,7 @@ class BaseStationaryScheme(BaseScheme):
         logger.debug("Newton err: %.3e", err)
         while err > tol:
             U += dU
-            R = b - self.operator(U)
+            R = b - operator(U)
             dU, exit_code = bicgstab(
                 A,
                 R,

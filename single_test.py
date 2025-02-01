@@ -4,6 +4,8 @@ pass
 """
 
 from os import environ
+import logging
+
 environ["OMP_NUM_THREADS"] = "4"
 
 import numpy as np
@@ -17,6 +19,15 @@ from direct_non_stationary_scheme import DirectNonStationaryScheme
 
 from enviroment import Material  # , TestParams, Test
 from draw import draw1D, drawHeatmap, drawGif
+
+logger = logging.getLogger("single_test")
+logging.basicConfig(
+    #filename='direct_test.log',
+    encoding='utf-8',
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s\t%(message)s',
+    datefmt='%d.%m.%Y %H:%M:%S'
+)
 
 stat_schemes = [DirectStationaryScheme, FDMStationaryScheme, SDMStationaryScheme]
 non_stat_schemes = [DirectNonStationaryScheme]
@@ -148,7 +159,7 @@ def main_stat():
     res, _ = scheme.solve(1e-6, inner_tol=5e-4)
     res = scheme.flatten(res, mod=0)
 
-    drawHeatmap(res, limits, "images/plot", show_plot=1, zlim=[300, 600])
+    # drawHeatmap(res, limits, "images/plot", show_plot=1, zlim=[300, 600])
     return F, G, res
 
 
@@ -167,7 +178,7 @@ def main_non_stat():
     f, g = GetNonStatFunc(T, dt)
 
     cell = 10
-    cell_size = 11
+    cell_size = 6
 
     square_shape = (cell, cell, cell_size, cell_size) if k == 0 else (cell, cell)
 
@@ -183,6 +194,7 @@ def main_non_stat():
     F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, dt=dt)
     scheme = Scheme(F, G, square_shape, material, dt, limits)
     # scheme.normed = 1
+    logger.info("")
     res = scheme.solve(1e-6, inner_tol=5e-4)  # , u0_squared=stat_res)
     res = scheme.flatten(res, mod=1)
 
@@ -227,6 +239,6 @@ def TestBndFuncs(a=0.0, b=0.3, L=1.0):
 
 
 if __name__ == "__main__":
-    main_stat()
-    # main_non_stat()
+    # main_stat()
+    main_non_stat()
     # TestBndFuncs()

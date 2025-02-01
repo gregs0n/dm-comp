@@ -37,7 +37,8 @@ class BaseScheme(ABC):
         self.F = F
         self.G = G
 
-        self.b = (self.F + self.G).flatten()
+        self.b = self.F + self.G
+        self.h = None
 
         self.square_shape = square_shape
 

@@ -4,8 +4,11 @@ Module template docstring
 
 from abc import abstractmethod
 import numpy as np
+import logging
 
 from base_scheme import BaseScheme
+from base_stationary_scheme import BaseStationaryScheme
+
 from enviroment import Material
 from wraps import timer
 
@@ -48,6 +51,8 @@ class BaseNonStationaryScheme(BaseScheme):
         Returns:
             what function returns
         """
+        logger = logging.getLogger()
+
         U = np.zeros_like(self.F)
         inner_tol = kwargs.get("inner_tol", 5e-4)
         U[0] = kwargs.get("u0_squared", 300.0 * np.ones(self.square_shape)) / self.w
@@ -56,17 +61,16 @@ class BaseNonStationaryScheme(BaseScheme):
         # drawHeatmap(view_data, self.limits[:-1], f"images/direct_non_stat/plot_{self.cur_layer:03}", show_plot=0, zlim=[300, 600])
 
         for self.cur_layer in range(1, U.shape[0]):
-            print(f"[{self.cur_layer:03}]", end="")
-            U[self.cur_layer] = self.solve_layer(
+            logger.info("Compute layer [%03d]", self.cur_layer)
+            U[self.cur_layer], _ = self.solve_layer(
                 tol, u_prev_squared=U[self.cur_layer - 1], inner_tol=inner_tol
             )
         U *= self.w
 
         return U
 
-    @abstractmethod
     def solve_layer(
-        self, tol: np.float64, u_prev_squared: np.ndarray, *args, **kwargs
+        self, tol: np.float64, u_prev_squared: np.ndarray, **kwargs
     ) -> np.ndarray:
         """
         Template docstring (EDIT)
@@ -76,6 +80,22 @@ class BaseNonStationaryScheme(BaseScheme):
         Returns:
             what function returns
         """
+
+        inner_tol = kwargs.get("inner_tol", 5e-4)
+        u_prev = u_prev_squared
+        b = self.b[self.cur_layer].flatten()
+
+        U, exit_code = BaseStationaryScheme.solve(
+            self,
+            tol,
+            inner_tol=inner_tol,
+            u0_squared=self.w*u_prev,
+            b=b,
+            operator=lambda u_linear: self.operator(u_linear, u_prev_linear=u_prev.flatten()),
+            jacobian=self.jacobian
+        )
+
+        return U / self.w, exit_code
 
     def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
         """

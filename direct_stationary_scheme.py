@@ -49,13 +49,13 @@ class DirectStationaryScheme(BaseStationaryScheme):
         self.dHeatStream = (
             lambda v, dv: 4 * self.stef_bolc * fabs(v) * fpower(v, 2) * dv
         )
-        
+
         self.G[0, 0, 0, 0] *= 2
         self.G[-1, 0, -1, 0] *= 2
         self.G[-1, -1, -1, -1] *= 2
         self.G[0, -1, 0, -1] *= 2
-        
-        self.b = (self.F + (2 / self.h) * self.G).flatten()
+
+        self.b = self.F + (2 / self.h) * self.G
 
     def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """

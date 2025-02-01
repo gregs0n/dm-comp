@@ -18,8 +18,8 @@ direct_dots = [
     11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
     11, 11, 11, 11, 11, 11, 10, 10, 10, 10,
     11, 10, 11, 11, 11, 11, 11,  9,  9, 10,
-    11, 10,  9, 10, 10, 36, 10,  8, 39, 40,
-    41,  6,  6,  7, 45, 46, 47, 48,  9, 50
+    11, 10,  9, 10, 10,  4, 10,  8,  5, 40,
+    11,  6,  6,  7, 45, 46, 47, 48,  9, 50
 ]
 
 logger = logging.getLogger()
@@ -37,7 +37,7 @@ def loadTest():
     result_folder = "direct_results/"
     image_folder = "images/"
 
-    cells = [36, 39, 40, 41, 45, 46, 47, 48, 50]
+    cells = list(range(10, 51))# [40, 45, 46, 47, 48, 50]
     thermal_conds = [1.0, 5.0, 10.0, 20.0]
     limits = (0.0, 1.0)
     stef_bolc = 5.67036713
@@ -55,41 +55,38 @@ def loadTest():
         material = Material("template", tcc, 0.0, 1.0, 1.0)
         logging.info("Test %s %s", str(test), test.get_hash())
 
-        # file = open(path + test.get_hash() + ".bin", "rb")
-        # bnd_data = pickle.load(file)
-        # file.close()
+        res = np.load(result_folder + test.get_hash() + ".npy")
+        print(res.shape)
 
-        # print(bnd_data["DirectStationaryScheme"][0].shape)
+        # cell_size = cell_size_start
+        # exit_code = 1
+        # while cell_size > 2 and exit_code != 0:
+        #     logging.info("Start computations with cell size %d", cell_size)
 
-        cell_size = cell_size_start
-        exit_code = 1
-        while cell_size > 2 and exit_code != 0:
-            logging.info("Start computations with cell size %d", cell_size)
+        #     square_shape = (cell, cell, cell_size, cell_size)
+        #     test.data["DirectStationaryScheme"] = DirectStationaryScheme.GetBoundaries(
+        #         f, g, square_shape, material, limits, stef_bolc
+        #     )
+        #     scheme = DirectStationaryScheme(
+        #         *test.data["DirectStationaryScheme"],
+        #         square_shape,
+        #         material,
+        #         limits
+        #     )
+        #     res, exit_code = scheme.solve(1e-6, inner_tol=1e-4)
+        #     if exit_code:
+        #         cell_size -= 1
 
-            square_shape = (cell, cell, cell_size, cell_size)
-            test.data["DirectStationaryScheme"] = DirectStationaryScheme.GetBoundaries(
-                f, g, square_shape, material, limits, stef_bolc
-            )
-            scheme = DirectStationaryScheme(
-                *test.data["DirectStationaryScheme"],
-                square_shape,
-                material,
-                limits
-            )
-            res, exit_code = scheme.solve(1e-6, inner_tol=1e-4)
-            if exit_code:
-                cell_size -= 1
+        # direct_dots[cell] = cell_size
+        # data_0 = scheme.flatten(res, mod=0)
+        # data_1 = scheme.flatten(res, mod=1)
+        # drawHeatmap(data_0, limits, image_folder + str(test) + "_mod=0", show_plot=0, zlim=[300, 600])
+        # drawHeatmap(data_1, limits, image_folder + str(test) + "_mod=1", show_plot=0, zlim=[300, 600])
 
-        direct_dots[cell] = cell_size
-        data_0 = scheme.flatten(res, mod=0)
-        data_1 = scheme.flatten(res, mod=1)
-        drawHeatmap(data_0, limits, image_folder + str(test) + "_mod=0", show_plot=0, zlim=[300, 600])
-        drawHeatmap(data_1, limits, image_folder + str(test) + "_mod=1", show_plot=0, zlim=[300, 600])
+        # np.save(result_folder + test.get_hash(), res)
+        # test.save(test_folder)
 
-        np.save(result_folder + test.get_hash(), res)
-        test.save(test_folder)
-
-        logging.info("SUCCESS - (%d, %d) - %d", cell, cell, cell_size)
+        # logging.info("SUCCESS - (%d, %d) - %d", cell, cell, cell_size)
 
 
 if __name__ == "__main__":
