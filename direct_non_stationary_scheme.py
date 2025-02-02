@@ -23,6 +23,7 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         material: Material,
         dt: np.float64,
         limits: list[np.float64, np.float64, np.float64],
+        **kwargs,
     ):
         """
         Template docstring (EDIT)
@@ -38,12 +39,14 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         cell_size = self.square_shape[2]
         self.h = (self.limits[1] - self.limits[0]) / ((cell_size - 1) * cells)
 
-        self.G[:, 0, 0, 0, 0] *= 2
-        self.G[:, -1, 0, -1, 0] *= 2
-        self.G[:, -1, -1, -1, -1] *= 2
-        self.G[:, 0, -1, 0, -1] *= 2
+        mask = (2 / self.h) * np.ones_like(self.G)
 
-        self.b = self.F + (2 / self.h) * self.G
+        mask[:, 0, 0, 0, 0] *= 2
+        mask[:, -1, 0, -1, 0] *= 2
+        mask[:, -1, -1, -1, -1] *= 2
+        mask[:, 0, -1, 0, -1] *= 2
+
+        self.b = self.F + mask * self.G
 
         self.HeatStream = lambda v: self.stef_bolc * fabs(v) * fpower(v, 3)
         self.dHeatStream = (
@@ -100,7 +103,7 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         """
         HeatStream = lambda t: stef_bolc * np.power(t, 4)
 
-        f = lambda T, x, y: HeatStream(f_func(T, x, y))
+        # f = lambda T, x, y: HeatStream(f_func(T, x, y))
         g = [
             lambda T, t: HeatStream(g_func[0](T, t)),
             lambda T, t: HeatStream(g_func[1](T, t)),

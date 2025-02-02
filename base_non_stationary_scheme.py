@@ -3,8 +3,8 @@ Module template docstring
 """
 
 from abc import abstractmethod
-import numpy as np
 import logging
+import numpy as np
 
 from base_scheme import BaseScheme
 from base_stationary_scheme import BaseStationaryScheme

@@ -27,7 +27,7 @@ def draw1D(
     ax.set_ylim(ymin=ylim[0], ymax=ylim[1])
     # ax.set_xlim(xmin=1.0/limits[0], xmax=1.0/limits[1])
     ax.grid(True)
-    # ax.legend()
+    ax.legend()
     if show_plot:
         plt.show()
     else:

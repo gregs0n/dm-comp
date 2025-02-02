@@ -25,6 +25,7 @@ class DirectStationaryScheme(BaseStationaryScheme):
         square_shape: tuple[int, int, int, int],
         material: Material,
         limits: list[np.float64, np.float64],
+        **kwargs,
     ):
         """
         Args:
@@ -50,12 +51,14 @@ class DirectStationaryScheme(BaseStationaryScheme):
             lambda v, dv: 4 * self.stef_bolc * fabs(v) * fpower(v, 2) * dv
         )
 
-        self.G[0, 0, 0, 0] *= 2
-        self.G[-1, 0, -1, 0] *= 2
-        self.G[-1, -1, -1, -1] *= 2
-        self.G[0, -1, 0, -1] *= 2
+        mask = (2 / self.h) * np.ones_like(self.G)
 
-        self.b = self.F + (2 / self.h) * self.G
+        mask[0, 0, 0, 0] *= 2
+        mask[-1, 0, -1, 0] *= 2
+        mask[-1, -1, -1, -1] *= 2
+        mask[0, -1, 0, -1] *= 2
+
+        self.b = self.F + mask * self.G
 
     def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
