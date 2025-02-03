@@ -3,18 +3,19 @@
 pass
 """
 
-from os import environ
+import os
 import logging
 
-environ["OMP_NUM_THREADS"] = "4"
+os.environ["OMP_NUM_THREADS"] = "4"
 
 import numpy as np
 
 from direct_non_stationary_scheme import DirectNonStationaryScheme
 from dm_non_stationary_scheme import DMNonStationaryScheme
 
-from enviroment import Material  # , TestParams, Test
-from draw import draw1D, drawHeatmap, drawGif
+from enviroment import Material, NonStatTest
+from draw import draw1D, drawHeatmap
+from tests import nonstat_tests
 
 logger = logging.getLogger("single_test")
 logging.basicConfig(
@@ -27,85 +28,35 @@ logging.basicConfig(
 
 non_stat_schemes = [DirectNonStationaryScheme, DMNonStationaryScheme]
 
+def norm_L2(x: np.ndarray, h: np.float64) -> np.float64:
+    if x.ndim != 2:
+        return -1
+    else:
+        h2 = h*h
+        x *= x
+        res = h2 * np.sum(x)
+        return res
 
-def GetNonStatFunc(timeBnd: np.float64, dt: np.float64):
-    """
-    pass
-    """
-    w = 100.0
-    tmax = 600.0 / w
-    tmin = 300.0 / w
-    coef = tmax - tmin
-    d = tmin
+def runtest(test: NonStatTest):
+    os.chdir("nonstat_tests")
+    test.init_test_folder()
+    os.chdir(test.name)
+    params = test.params
 
-    L = 1.0
-    a, b = 0.0, 0.5
+    logger.info("Num layers - %d", int(params.T/params.dt))
+    logger.info("crho/dt = %f", params.c_rho / params.dt)
 
-    t_window = 0.8 * timeBnd
+    run_nonstat_scheme(test, 0, 0, *params)
+    run_nonstat_scheme(test, 1, 0, *params)
+    run_nonstat_scheme(test, 1, 1, *params)
 
-    activation_kernel = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
-    # activation_kernel = lambda t: t
+    check_non_stat(test)
 
-    activation = lambda t: (
-        activation_kernel((t - 0.5 * t_window) / t_window) if t < t_window else 1.0
-    )
-    # activation = lambda t: activation_kernel(t / t_window) if t < t_window else 1.0
+    os.chdir("../..")
 
-    g_kernel = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
-
-    left_g = lambda t: (
-        g_kernel((2 * t - 0.5 * (b - a)) / (b - a)) if a <= t <= b else 0.0
-    )
-
-    right_g = lambda t: (
-        g_kernel((2 * (L - t) - 0.5 * (b - a)) / (b - a))
-        if (1.0 - b) <= t <= (1.0 - a)
-        else 0.0
-    )
-
-    f = lambda T, x, y: 0.0
-    g = [
-        lambda T, t: (d + coef * activation(T) * left_g(t)),
-        # lambda T, t: tmax,
-        lambda T, t: tmin,
-        lambda T, t: (d + coef * activation(T) * right_g(t)),
-        lambda T, t: tmin,
-        # lambda T, t: tmin,
-    ]
-
-    arg = np.arange(0, timeBnd + 0.5*dt, dt)
-
-    # draw1D(
-    #     [np.array([activation(x) for x in arg])],
-    #     [0, timeBnd],
-    #     "g(t)",
-    #     show_plot=0,
-    #     ylim=[-0.05, 1.05],
-    # )
-
-    # draw1D(
-    #     [
-    #         np.array([activation(x) for x in arg]),
-    #         np.array([left_g(x) for x in arg]),
-    #         np.array([right_g(x) for x in arg])
-    #     ],
-    #     [0, timeBnd],
-    #     "activation & g_kernel",
-    #     show_plot=0,
-    #     ylim=[-0.05, 1.05],
-    # )
-
-    return f, g
-
-def test_non_stat(folder, scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
-    """
-    template docstring
-    """
-
-    # F_stat, G_stat, stat_res = test_stat()
-
+def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
     Scheme = non_stat_schemes[scheme_no]
-    f, g = GetNonStatFunc(T, dt)
+    f, g = test.f, test.g
 
     square_shape = (cell, cell, cell_size, cell_size) if scheme_no == 0 else (cell, cell)
 
@@ -130,13 +81,12 @@ def test_non_stat(folder, scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt)
             drawHeatmap(
                 layer,
                 scheme.limits[:-1],
-                f"images/direct_non_stat/plot_{i*n_plots_step:03}",
+                f"{test.direct_folder}/plot_{i*n_plots_step:03}",
                 show_plot=0,
-                zlim=[300, 600],
+                zlim=[res.min(),res.max()],
             )
             logger.info("Draw layer [%03d]", i*n_plots_step)
 
-    # drawGif(res)
     filename = "DMNonStationaryScheme"
     if scheme_no == 0:
         filename = "DirectNonStationaryScheme"
@@ -144,67 +94,14 @@ def test_non_stat(folder, scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt)
         filename += "_SDM"
     else:
         filename += "_FDM"
-    print(filename)
-    np.save(folder + filename, res)
+    logger.info("Scheme %s finished", filename)
+    np.save(filename, res)
 
+def check_non_stat(test):
 
-def TestBndFuncs(a=0.0, b=0.3, L=1.0):
-    arg = np.linspace(0, L, 100)
-
-    activation = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
-
-    g_kernel = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
-
-    left_g = lambda t: (
-        g_kernel((2 * t - 0.5 * (b - a)) / (b - a)) if a <= t <= b else 0.0
-    )
-
-    right_g = lambda t: (
-        g_kernel((2 * (L - t) - 0.5 * (b - a)) / (b - a)) if 0.7 <= t <= 1.0 else 0.0
-    )
-    draw1D(
-        [
-            activation((arg - 0.5 * L) / L),
-            g_kernel((2 * arg - 0.5 * L) / L),
-            np.array([left_g(x) for x in arg]),
-            np.array([right_g(x) for x in arg]),
-        ],
-        [0, L],
-        "activation & g_kernel",
-        show_plot=0,
-        ylim=[-0.05, 1.05]
-    )
-
-def norm_L2(x: np.ndarray, h: np.float64) -> np.float64:
-    if x.ndim != 2:
-        return -1
-    else:
-        h2 = h*h
-        x *= x
-        res = h2 * np.sum(x)
-        return res
-
-def main(folder):
-    cell = 30
-    cell_size = 6
-    tcc = 1.0
-    crho = 20.0
-    T = 50.0
-    dt = 1.0
-    logger.info("Num layers - %d", int(T/dt))
-    logger.info("crho/dt = %f", crho / dt)
-    test_non_stat(folder, 0, 0, cell, cell_size, tcc, crho, T, dt)
-    test_non_stat(folder, 1, 0, cell, cell_size, tcc, crho, T, dt)
-    test_non_stat(folder, 1, 1, cell, cell_size, tcc, crho, T, dt)
-
-def check_non_stat(folder):
-
-    direct = np.load(folder + "DirectNonStationaryScheme.npy")
-    print(direct.shape)
-    fdm = np.load(folder + "DMNonStationaryScheme_FDM.npy")
-    print(fdm.shape)
-    sdm = np.load(folder + "DMNonStationaryScheme_SDM.npy")
-    print(sdm.shape)
+    direct = np.load("DirectNonStationaryScheme.npy")
+    fdm = np.load("DMNonStationaryScheme_FDM.npy")
+    sdm = np.load("DMNonStationaryScheme_SDM.npy")
     if (fdm.shape != direct.shape
         or sdm.shape != direct.shape):
         exit()
@@ -215,26 +112,36 @@ def check_non_stat(folder):
     err_fdm = np.zeros(direct.shape[0]-1)
     err_sdm = np.zeros(direct.shape[0]-1)
 
-    for i in range(direct.shape[0]-1):
-        err_fdm[i] = err_fdm_raw[i+1].max() / direct[i+1].max()
-        err_sdm[i] = err_sdm_raw[i+1].max() / direct[i+1].max()
+    n_plots = 10
+    n_plots_step = max(1, direct.shape[0] // n_plots)
+    indexes = [1] + list(range(n_plots_step, direct.shape[0], n_plots_step))
+
+    for i in range(direct.shape[0]):
+        if i < direct.shape[0]-1:
+            err_fdm[i] = err_fdm_raw[i+1].max() / direct[i+1].max()
+            err_sdm[i] = err_sdm_raw[i+1].max() / direct[i+1].max()
         # err_fdm[i] = norm_L2(err_fdm_raw[i+1], 1.0/30.0)
         # err_sdm[i] = norm_L2(err_sdm_raw[i+1], 1.0/30.0)
 
+    os.chdir(test.err_fdm_folder)
+    for i in indexes:
         drawHeatmap(
             err_fdm_raw[i],
             [0.0, 1.0],
-            f"images/non_stat_err/fdm_plot_{i+1:03}",
+            f"plot_{i:03}",
             show_plot=0,
         )
+
+    os.chdir("..")
+    os.chdir(test.err_sdm_folder)
+    for i in indexes:
         drawHeatmap(
             err_sdm_raw[i],
             [0.0, 1.0],
-            f"images/non_stat_err/sdm_plot_{i+1:03}",
+            f"plot_{i:03}",
             show_plot=0,
         )
-        logger.info("Draw layer [%03d]", i+1)
-
+    os.chdir("..")
     draw1D(
         [
             err_fdm,
@@ -248,8 +155,5 @@ def check_non_stat(folder):
     )
 
 if __name__ == "__main__":
-    suffix = "_sin"
-    folder = f"nonstat{suffix}/"
-    TestBndFuncs()
-    main(folder)
-    check_non_stat(folder)
+    test_no = -1
+    runtest(nonstat_tests[3])

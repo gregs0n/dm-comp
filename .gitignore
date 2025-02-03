@@ -1,8 +1,7 @@
 __pycache__/
-direct_results*/
-images*/
-tests*/
-nonstat*/
+old*/
+images/
+nonstat_tests/
 *.txt
 *.log
 *.out
