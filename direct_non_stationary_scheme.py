@@ -65,7 +65,7 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
 
         return (
             DirectStationaryScheme.operator(self, u_linear)
-            + (u_linear - kwargs["u_prev_linear"]) * self.material.crho / self.dt
+            + (u_linear - kwargs["u_prev_linear"]) * self.material.crho * self.w / self.dt
         )
 
     def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
@@ -80,7 +80,7 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
 
         return (
             DirectStationaryScheme.jacobian(self, u_linear, du_linear)
-            + self.material.crho * du_linear / self.dt
+            + self.material.crho * self.w * du_linear / self.dt
         )
 
     @staticmethod

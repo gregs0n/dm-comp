@@ -10,9 +10,6 @@ environ["OMP_NUM_THREADS"] = "4"
 
 import numpy as np
 
-from direct_stationary_scheme import DirectStationaryScheme
-from dm_stationary_scheme import DMStationaryScheme
-
 from direct_non_stationary_scheme import DirectNonStationaryScheme
 from dm_non_stationary_scheme import DMNonStationaryScheme
 
@@ -21,52 +18,14 @@ from draw import draw1D, drawHeatmap, drawGif
 
 logger = logging.getLogger("single_test")
 logging.basicConfig(
-    #filename='direct_test.log',
-    # filename='logs.txt',
+    #filename='nonstat_test.log',
     encoding='utf-8',
     level=logging.INFO,
     format='%(asctime)s %(levelname)s\t%(message)s',
     datefmt='%d.%m.%Y %H:%M:%S'
 )
 
-stat_schemes = [DirectStationaryScheme, DMStationaryScheme]
 non_stat_schemes = [DirectNonStationaryScheme, DMNonStationaryScheme]
-
-
-def GetStatFunc():
-    """
-    returns f(x, y) and list of 4 g(t) NORMED
-    """
-    w = 100.0
-    tmax = 600.0 / w
-    tmin = 300.0 / w
-    coef = tmax - tmin
-    d = tmin
-
-    L = 1.0
-    a, b = 0.0, 0.5
-    g_kernel = lambda t: 0.5 + 0.5 * np.sin(np.pi * t)
-
-    left_g = lambda t: (
-        g_kernel((2 * t - 0.5 * (b - a)) / (b - a)) if a <= t <= b else 0.0
-    )
-
-    right_g = lambda t: (
-        g_kernel((2 * (L - t) - 0.5 * (b - a)) / (b - a))
-        if (1.0 - b) <= t <= (1.0 - a)
-        else 0.0
-    )
-
-    f = lambda x, y: 0.0
-    g = [
-        lambda t: (d + coef * left_g(t)),
-        # lambda t: tmax,
-        lambda t: tmin,
-        lambda t: (d + coef * right_g(t)),
-        lambda t: tmin,
-        # lambda t: tmin,
-    ]
-    return f, g
 
 
 def GetNonStatFunc(timeBnd: np.float64, dt: np.float64):
@@ -138,42 +97,7 @@ def GetNonStatFunc(timeBnd: np.float64, dt: np.float64):
 
     return f, g
 
-
-def test_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho):
-    """
-    template docstring
-    """
-    Scheme = stat_schemes[scheme_no]
-
-    f, g = GetStatFunc()
-
-    square_shape = (cell, cell, cell_size, cell_size) if scheme_no == 0 else (cell, cell)
-
-    material = Material(
-        "template",
-        thermal_cond=tcc,
-        tmin=0.0, tmax=1.0,
-        crho=crho
-    )
-    limits = (0.0, 1.0)
-    stef_bolc = 5.67036713
-
-    F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, use_sdm=use_sdm)
-    scheme = Scheme(np.copy(F), np.copy(G), square_shape, material, limits, use_sdm=use_sdm)
-    res, _ = scheme.solve(1e-6, inner_tol=5e-4)
-    res = scheme.flatten(res, mod=0)
-
-    drawHeatmap(
-        res,
-        limits,
-        "images/plot",
-        show_plot=1,
-        zlim=[300, 600],
-    )
-    return F, G, res
-
-
-def test_non_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
+def test_non_stat(folder, scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
     """
     template docstring
     """
@@ -221,7 +145,7 @@ def test_non_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
     else:
         filename += "_FDM"
     print(filename)
-    np.save(filename, res)
+    np.save(folder + filename, res)
 
 
 def TestBndFuncs(a=0.0, b=0.3, L=1.0):
@@ -260,22 +184,21 @@ def norm_L2(x: np.ndarray, h: np.float64) -> np.float64:
         res = h2 * np.sum(x)
         return res
 
-def main():
+def main(folder):
     cell = 30
     cell_size = 6
     tcc = 1.0
-    crho = 2000.0
+    crho = 20.0
     T = 50.0
     dt = 1.0
     logger.info("Num layers - %d", int(T/dt))
     logger.info("crho/dt = %f", crho / dt)
-    test_non_stat(0, 0, cell, cell_size, tcc, crho, T, dt)
-    test_non_stat(1, 0, cell, cell_size, tcc, crho, T, dt)
-    test_non_stat(1, 1, cell, cell_size, tcc, crho, T, dt)
+    test_non_stat(folder, 0, 0, cell, cell_size, tcc, crho, T, dt)
+    test_non_stat(folder, 1, 0, cell, cell_size, tcc, crho, T, dt)
+    test_non_stat(folder, 1, 1, cell, cell_size, tcc, crho, T, dt)
 
-def check_non_stat():
-    suffix = ""#"_lin"
-    folder = f"nonstat{suffix}/"
+def check_non_stat(folder):
+
     direct = np.load(folder + "DirectNonStationaryScheme.npy")
     print(direct.shape)
     fdm = np.load(folder + "DMNonStationaryScheme_FDM.npy")
@@ -318,13 +241,15 @@ def check_non_stat():
             err_sdm
         ],
         [1, direct.shape[0]],
-        f"nonstat_err{suffix}",
+        "nonstat_err",
         yscale='linear',
         legends=["FDM", "SDM"],
         show_plot=0
     )
 
 if __name__ == "__main__":
+    suffix = "_sin"
+    folder = f"nonstat{suffix}/"
     TestBndFuncs()
-    # main()
-    # check_non_stat()
+    main(folder)
+    check_non_stat(folder)
