@@ -196,11 +196,11 @@ def test_non_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
 
     F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, dt=dt, use_sdm=use_sdm)
     scheme = Scheme(np.copy(F), np.copy(G), square_shape, material, dt, limits, use_sdm=use_sdm)
-    res = scheme.solve(1e-6, inner_tol=5e-4, u0_squared=600.0*np.ones_like(F[0]))
+    res = scheme.solve(1e-6, inner_tol=5e-4) # , u0_squared=600.0*np.ones_like(F[0]))
     res = scheme.flatten(res, mod=1)
 
     if scheme_no == 0:
-        n_plots = 10000
+        n_plots = 10
         n_plots_step = max(1, res.shape[0] // n_plots)
         for i, layer in enumerate(res[::n_plots_step]):
             drawHeatmap(
@@ -210,6 +210,7 @@ def test_non_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
                 show_plot=0,
                 zlim=[300, 600],
             )
+            logger.info("Draw layer [%03d]", i*n_plots_step)
 
     # drawGif(res)
     filename = "DMNonStationaryScheme"
@@ -256,17 +257,7 @@ def norm_L2(x: np.ndarray, h: np.float64) -> np.float64:
     else:
         h2 = h*h
         x *= x
-        res = (
-            h2 * np.sum(x[1:-1, 1:-1])
-            + 0.5 * h2 * np.sum(x[0, 1:-1])
-            + 0.5 * h2 * np.sum(x[-1, 1:-1])
-            + 0.5 * h2 * np.sum(x[1:-1, 0])
-            + 0.5 * h2 * np.sum(x[1:-1, -1])
-            + 0.25 * (
-                h2 * x[0, 0] + h2 * x[-1, 0]
-                + h2 * x[0, -1] + h2 * x[-1, -1]
-            )
-        )
+        res = h2 * np.sum(x)
         return res
 
 def main():
