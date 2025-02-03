@@ -31,7 +31,7 @@ def draw1D(
     if show_plot:
         plt.show()
     else:
-        fig.savefig(plot_name + ".png", dpi=500)
+        fig.savefig(plot_name + ".png")#, dpi=500)
     plt.close()
     del fig, ax
 
@@ -59,7 +59,7 @@ def drawHeatmap(
     if show_plot:
         plt.show()
     else:
-        fig.savefig(plot_name + ".png", dpi=1000)
+        fig.savefig(plot_name + ".png")#, dpi=1000)
     plt.close()
     del fig, ax
 

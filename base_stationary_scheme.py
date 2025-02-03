@@ -2,9 +2,9 @@
 Base Stationary Scheme class module.
 """
 
+import logging
 import numpy as np
 from scipy.sparse.linalg import LinearOperator, bicgstab
-import logging
 
 from base_scheme import BaseScheme
 from wraps import timer

@@ -2,8 +2,9 @@ __pycache__/
 direct_results*/
 images*/
 tests*/
-non_stat_etl_test/
+nonstat*/
 *.txt
 *.log
 *.out
 *.bin
+*.png

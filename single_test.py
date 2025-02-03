@@ -117,13 +117,23 @@ def GetNonStatFunc(timeBnd: np.float64, dt: np.float64):
     arg = np.arange(0, timeBnd + 0.5*dt, dt)
 
     # draw1D(
+    #     [np.array([activation(x) for x in arg])],
+    #     [0, timeBnd],
+    #     "g(t)",
+    #     show_plot=0,
+    #     ylim=[-0.05, 1.05],
+    # )
+
+    # draw1D(
     #     [
     #         np.array([activation(x) for x in arg]),
     #         np.array([left_g(x) for x in arg]),
     #         np.array([right_g(x) for x in arg])
     #     ],
     #     [0, timeBnd],
-    #     "activation & g_kernel"
+    #     "activation & g_kernel",
+    #     show_plot=0,
+    #     ylim=[-0.05, 1.05],
     # )
 
     return f, g
@@ -186,19 +196,20 @@ def test_non_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
 
     F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, dt=dt, use_sdm=use_sdm)
     scheme = Scheme(np.copy(F), np.copy(G), square_shape, material, dt, limits, use_sdm=use_sdm)
-    res = scheme.solve(1e-6, inner_tol=5e-4)  # , u0_squared=stat_res)
+    res = scheme.solve(1e-6, inner_tol=5e-4, u0_squared=600.0*np.ones_like(F[0]))
     res = scheme.flatten(res, mod=1)
 
-    # n_plots = 10000
-    # n_plots_step = max(1, res.shape[0] // n_plots)
-    # for i, layer in enumerate(res[::n_plots_step]):
-    #     drawHeatmap(
-    #         layer,
-    #         scheme.limits[:-1],
-    #         f"images/direct_non_stat/plot_{i*n_plots_step:03}",
-    #         show_plot=1,
-    #         zlim=[300, 600],
-    #     )
+    if scheme_no == 0:
+        n_plots = 10000
+        n_plots_step = max(1, res.shape[0] // n_plots)
+        for i, layer in enumerate(res[::n_plots_step]):
+            drawHeatmap(
+                layer,
+                scheme.limits[:-1],
+                f"images/direct_non_stat/plot_{i*n_plots_step:03}",
+                show_plot=0,
+                zlim=[300, 600],
+            )
 
     # drawGif(res)
     filename = "DMNonStationaryScheme"
@@ -235,7 +246,28 @@ def TestBndFuncs(a=0.0, b=0.3, L=1.0):
         ],
         [0, L],
         "activation & g_kernel",
+        show_plot=0,
+        ylim=[-0.05, 1.05]
     )
+
+def norm_L2(x: np.ndarray, h: np.float64) -> np.float64:
+    if x.ndim != 2:
+        return -1
+    else:
+        h2 = h*h
+        x *= x
+        res = (
+            h2 * np.sum(x[1:-1, 1:-1])
+            + 0.5 * h2 * np.sum(x[0, 1:-1])
+            + 0.5 * h2 * np.sum(x[-1, 1:-1])
+            + 0.5 * h2 * np.sum(x[1:-1, 0])
+            + 0.5 * h2 * np.sum(x[1:-1, -1])
+            + 0.25 * (
+                h2 * x[0, 0] + h2 * x[-1, 0]
+                + h2 * x[0, -1] + h2 * x[-1, -1]
+            )
+        )
+        return res
 
 def main():
     cell = 30
@@ -251,11 +283,13 @@ def main():
     test_non_stat(1, 1, cell, cell_size, tcc, crho, T, dt)
 
 def check_non_stat():
-    direct = np.load("DirectNonStationaryScheme.npy")
+    suffix = ""#"_lin"
+    folder = f"nonstat{suffix}/"
+    direct = np.load(folder + "DirectNonStationaryScheme.npy")
     print(direct.shape)
-    fdm = np.load("DMNonStationaryScheme_FDM.npy")
+    fdm = np.load(folder + "DMNonStationaryScheme_FDM.npy")
     print(fdm.shape)
-    sdm = np.load("DMNonStationaryScheme_SDM.npy")
+    sdm = np.load(folder + "DMNonStationaryScheme_SDM.npy")
     print(sdm.shape)
     if (fdm.shape != direct.shape
         or sdm.shape != direct.shape):
@@ -264,21 +298,42 @@ def check_non_stat():
     err_fdm_raw = np.abs(direct - fdm)
     err_sdm_raw = np.abs(direct - sdm)
 
-    err_fdm = np.zeros(direct.shape[0])
-    err_sdm = np.zeros(direct.shape[0])
+    err_fdm = np.zeros(direct.shape[0]-1)
+    err_sdm = np.zeros(direct.shape[0]-1)
 
-    for i in range(direct.shape[0]):
-        err_fdm[i] = err_fdm_raw[i].max() / direct[i].max()
-        err_sdm[i] = err_sdm_raw[i].max() / direct[i].max()
-        # drawHeatmap(
-        #     err_fdm_raw[i],
-        #     [0.0, 1.0],
-        #     f"images/direct_non_stat/plot_{i}",
-        #     show_plot=1,
-        # )
+    for i in range(direct.shape[0]-1):
+        err_fdm[i] = err_fdm_raw[i+1].max() / direct[i+1].max()
+        err_sdm[i] = err_sdm_raw[i+1].max() / direct[i+1].max()
+        # err_fdm[i] = norm_L2(err_fdm_raw[i+1], 1.0/30.0)
+        # err_sdm[i] = norm_L2(err_sdm_raw[i+1], 1.0/30.0)
 
-    draw1D([err_fdm, err_sdm], [0, direct.shape[0]], "non stat errs", legends=["FDM", "SDM"])
+        drawHeatmap(
+            err_fdm_raw[i],
+            [0.0, 1.0],
+            f"images/non_stat_err/fdm_plot_{i+1:03}",
+            show_plot=0,
+        )
+        drawHeatmap(
+            err_sdm_raw[i],
+            [0.0, 1.0],
+            f"images/non_stat_err/sdm_plot_{i+1:03}",
+            show_plot=0,
+        )
+        logger.info("Draw layer [%03d]", i+1)
+
+    draw1D(
+        [
+            err_fdm,
+            err_sdm
+        ],
+        [1, direct.shape[0]],
+        f"nonstat_err{suffix}",
+        yscale='linear',
+        legends=["FDM", "SDM"],
+        show_plot=0
+    )
 
 if __name__ == "__main__":
-    main()
-    check_non_stat()
+    TestBndFuncs()
+    # main()
+    # check_non_stat()

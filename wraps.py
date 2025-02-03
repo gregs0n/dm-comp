@@ -25,7 +25,7 @@ def timer(func):
         result = func(*args, **kwargs)
         runtime = time.perf_counter() - start
         # line = f"{func.__qualname__} took {runtime//60} min {runtime%60:.4f} secs"
-        logger.info(
+        logger.debug(
             "%s took %d min %.4f secs",
             func.__qualname__,
             runtime//60,
