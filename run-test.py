@@ -9,7 +9,7 @@ import logging
 
 from direct_stationary_scheme import DirectStationaryScheme
 
-from stat_test import GetStatFunc
+from run_stat_test import GetStatFunc
 from enviroment import Material, TestParams, Test
 from draw import drawHeatmap
 

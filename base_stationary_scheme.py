@@ -48,16 +48,17 @@ class BaseStationaryScheme(BaseScheme):
             A,
             R,
             rtol=inner_tol,
-            atol=0.0,
+            atol=tol,
             x0=R,
         )
         if exit_code:
             logger.warning("jacobian failed with exit code: %d ON THE START", exit_code)
+            U += dU
             U = (self.w * U).reshape(self.square_shape)
             return U, exit_code
 
         err = np.abs(dU).max()
-        logger.debug("Newton err: %.3e", err)
+        logger.debug("\tNewton err: %.3e", err)
         while err > tol:
             U += dU
             R = b - operator(U)
@@ -65,15 +66,15 @@ class BaseStationaryScheme(BaseScheme):
                 A,
                 R,
                 rtol=inner_tol,
-                atol=0.0,
+                atol=tol,
                 x0=dU,
             )
+            err = np.abs(dU).max()
             if exit_code:
                 logger.warning("jacobian failed with exit code: %d and final error %.3e", exit_code, err)
                 U += dU
                 U = (self.w * U).reshape(self.square_shape)
                 return U, exit_code
-            err = np.abs(dU).max()
-            logger.debug("Newton err: %.3e", err)
+            logger.debug("\tNewton err: %.3e", err)
         U = (self.w * U).reshape(self.square_shape)
         return U, exit_code

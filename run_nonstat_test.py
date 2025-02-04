@@ -71,19 +71,19 @@ def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, t
 
     F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, dt=dt, use_sdm=use_sdm)
     scheme = Scheme(np.copy(F), np.copy(G), square_shape, material, dt, limits, use_sdm=use_sdm)
-    res = scheme.solve(1e-6, inner_tol=5e-4) # , u0_squared=600.0*np.ones_like(F[0]))
-    res = scheme.flatten(res, mod=1)
+    res = scheme.solve(1e-6, inner_tol=1e-4) # , u0_squared=600.0*np.ones_like(F[0]))
+    data = scheme.flatten(res, mod=0)
 
     if scheme_no == 0:
         n_plots = 10
-        n_plots_step = max(1, res.shape[0] // n_plots)
-        for i, layer in enumerate(res[::n_plots_step]):
+        n_plots_step = max(1, data.shape[0] // n_plots)
+        for i, layer in enumerate(data[::n_plots_step]):
             drawHeatmap(
                 layer,
                 scheme.limits[:-1],
                 f"{test.direct_folder}/plot_{i*n_plots_step:03}",
                 show_plot=0,
-                zlim=[res.min(),res.max()],
+                zlim=[data.min(),data.max()],
             )
             logger.info("Draw layer [%03d]", i*n_plots_step)
 
@@ -95,7 +95,7 @@ def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, t
     else:
         filename += "_FDM"
     logger.info("Scheme %s finished", filename)
-    np.save(filename, res)
+    np.save(filename, scheme.flatten(res, mod=1))
 
 def check_non_stat(test):
 
@@ -148,12 +148,12 @@ def check_non_stat(test):
             err_sdm
         ],
         [1, direct.shape[0]],
-        "nonstat_err",
+        "Относительная ошибка методов по времени",
         yscale='linear',
         legends=["FDM", "SDM"],
         show_plot=0
     )
 
 if __name__ == "__main__":
-    test_no = -1
-    runtest(nonstat_tests[3])
+    for _test in nonstat_tests:
+        runtest(_test)

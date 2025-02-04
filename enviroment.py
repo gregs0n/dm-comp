@@ -90,6 +90,14 @@ class NonStatTest:
     err_sdm_folder: str = "3.Ошибка - Второй дискретный метод"
 
     def init_test_folder(self):
+        param_description: dict[str, Callable] = {
+            "cell" : lambda param: f"{param} x {param} = {param*param} стержней",
+            "thermal_cond" : lambda param: f"Коэффициент теплопроводности - {param}",
+            "c_rho" : lambda param: f"Коэффициент c_rho - {param}",
+            "T" : lambda param: f"Временной промежуток от 0 до {param} сек",
+            "dt" : lambda param: f"Шаг по времени - {param} сек",
+        }
+
         if self.name not in os.listdir():
             os.mkdir(self.name)
             os.chdir(self.name)
@@ -103,7 +111,7 @@ class NonStatTest:
             file.write(self.description)
             for field, value in self.params._asdict().items():
                 if field != "cell_size":
-                    file.write(f"{field} = {value}\n")
+                    file.write(param_description[field](value) + '\n')
         os.chdir(self.__heat_src_folder)
         self.g_preview()
         os.chdir("../..")
@@ -124,7 +132,7 @@ class NonStatTest:
         ]
         for (i, g_side) in enumerate(self.g):
             draw1D(
-                [np.array([g_side(50.0, x) for x in arg])],
+                [np.array([100.0*g_side(self.params.T, x) for x in arg])],
                 [0, 1],
                 titles[i],
                 legends=[legends[i]],
