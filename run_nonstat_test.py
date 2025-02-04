@@ -33,8 +33,8 @@ def norm_L2(x: np.ndarray, h: np.float64) -> np.float64:
         return -1
     else:
         h2 = h*h
-        x *= x
-        res = h2 * np.sum(x)
+        x_sqr = x*x
+        res = h2 * np.sum(x_sqr)
         return res
 
 def runtest(test: NonStatTest):
@@ -43,6 +43,7 @@ def runtest(test: NonStatTest):
     os.chdir(test.name)
     params = test.params
 
+    logger.info("Start test `%s`", test.name)
     logger.info("Num layers - %d", int(params.T/params.dt))
     logger.info("crho/dt = %f", params.c_rho / params.dt)
 
@@ -51,6 +52,8 @@ def runtest(test: NonStatTest):
     run_nonstat_scheme(test, 1, 1, *params)
 
     check_non_stat(test)
+
+    logger.info("End test `%s`", test.name)
 
     os.chdir("../..")
 
@@ -83,7 +86,7 @@ def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, t
                 scheme.limits[:-1],
                 f"{test.direct_folder}/plot_{i*n_plots_step:03}",
                 show_plot=0,
-                zlim=[data.min(),data.max()],
+                zlim=[data.min(), data.max()],
             )
             logger.info("Draw layer [%03d]", i*n_plots_step)
 
@@ -109,19 +112,20 @@ def check_non_stat(test):
     err_fdm_raw = np.abs(direct - fdm)
     err_sdm_raw = np.abs(direct - sdm)
 
-    err_fdm = np.zeros(direct.shape[0]-1)
-    err_sdm = np.zeros(direct.shape[0]-1)
+    err_fdm_L_inf = np.zeros(direct.shape[0]-1)
+    err_sdm_L_inf = np.zeros(direct.shape[0]-1)
+    err_fdm_L_2 = np.zeros(direct.shape[0]-1)
+    err_sdm_L_2 = np.zeros(direct.shape[0]-1)
 
     n_plots = 10
     n_plots_step = max(1, direct.shape[0] // n_plots)
     indexes = [1] + list(range(n_plots_step, direct.shape[0], n_plots_step))
 
-    for i in range(direct.shape[0]):
-        if i < direct.shape[0]-1:
-            err_fdm[i] = err_fdm_raw[i+1].max() / direct[i+1].max()
-            err_sdm[i] = err_sdm_raw[i+1].max() / direct[i+1].max()
-        # err_fdm[i] = norm_L2(err_fdm_raw[i+1], 1.0/30.0)
-        # err_sdm[i] = norm_L2(err_sdm_raw[i+1], 1.0/30.0)
+    for i in range(direct.shape[0]-1):
+        err_fdm_L_inf[i] = np.max(err_fdm_raw[i+1])
+        err_sdm_L_inf[i] = np.max(err_sdm_raw[i+1])
+        err_fdm_L_2[i] = norm_L2(err_fdm_raw[i+1], 1.0/test.params.cell)
+        err_sdm_L_2[i] = norm_L2(err_sdm_raw[i+1], 1.0/test.params.cell)
 
     os.chdir(test.err_fdm_folder)
     for i in indexes:
@@ -144,11 +148,22 @@ def check_non_stat(test):
     os.chdir("..")
     draw1D(
         [
-            err_fdm,
-            err_sdm
+            err_fdm_L_inf,
+            err_sdm_L_inf
         ],
-        [1, direct.shape[0]],
-        "Относительная ошибка методов по времени",
+        [0, test.params.T],
+        "Абсолютная (L_inf) ошибка методов по времени",
+        yscale='linear',
+        legends=["FDM", "SDM"],
+        show_plot=0
+    )
+    draw1D(
+        [
+            err_fdm_L_2,
+            err_sdm_L_2
+        ],
+        [0, test.params.T],
+        "Абсолютная (L_2) ошибка методов по времени",
         yscale='linear',
         legends=["FDM", "SDM"],
         show_plot=0

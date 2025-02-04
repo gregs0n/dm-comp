@@ -1,7 +1,7 @@
 import numpy as np
 from enviroment import NonStatTestParams, NonStatTest
 
-ACTIVATION_L = 0.8
+ACTIVATION_L = 0.6
 TMIN = 3.0
 TMAX = 6.0
 
@@ -85,7 +85,7 @@ nonstat_tests = [
     ),
         NonStatTest(
         name="test_4_point_heat_source",
-        description="Имитация источника, близкого к точечному\n",
+        description="Имитация источника, близкого к точечному.\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
             cell_size=6,
@@ -102,7 +102,7 @@ nonstat_tests = [
     ),
             NonStatTest(
         name="test_5_point_heat_source",
-        description="Имитация источника, близкого к точечному\n",
+        description="Имитация источника, близкого к точечному.\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
             cell_size=6,
@@ -114,6 +114,42 @@ nonstat_tests = [
             lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5 - 0.05, 0.5 + 0.05)(t),
             lambda T, t: TMIN,
             lambda T, t: TMIN,
+            lambda T, t: TMIN,
+        ]
+    ),
+    NonStatTest(
+        name="test_6_two_side_sin_dt=0.1",
+        description="Два синуса на противоположных сторонах, в отдалении от углов\nУменьшенный шаг по времени (0.1)\n\nПараметры теста:\n\n",
+        params=NonStatTestParams(
+            cell=15,
+            cell_size=6,
+            thermal_cond=5.0,
+            c_rho=20.0,
+            dt=0.1
+        ),
+        f=lambda T, x, y: 0.0,
+        g=[
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.0, 0.5)(t),
+            lambda T, t: TMIN,
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5, 1.0)(t),
+            lambda T, t: TMIN,
+        ]
+    ),
+    NonStatTest(
+        name="test_7_two_side_sin_dt=0.02",
+        description="Два синуса на противоположных сторонах, в отдалении от углов\n Самый мелкий шаг по времени (0.02)\n\nПараметры теста:\n\n",
+        params=NonStatTestParams(
+            cell=15,
+            cell_size=6,
+            thermal_cond=5.0,
+            c_rho=20.0,
+            dt=0.02
+        ),
+        f=lambda T, x, y: 0.0,
+        g=[
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.0, 0.5)(t),
+            lambda T, t: TMIN,
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5, 1.0)(t),
             lambda T, t: TMIN,
         ]
     ),
