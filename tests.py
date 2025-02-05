@@ -16,7 +16,7 @@ def get_g(a, b):
 
 nonstat_tests = [
     NonStatTest(
-        name="test_0_two_side_sin",
+        name="test_00_two_side_sin",
         description="Два синуса на противоположных сторонах, в отдалении от углов\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
@@ -33,7 +33,7 @@ nonstat_tests = [
         ]
     ),
         NonStatTest(
-        name="test_1_two_side_sin",
+        name="test_01_two_side_sin",
         description="Два синуса на противоположных сторонах, в отдалении от углов.\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
@@ -50,7 +50,7 @@ nonstat_tests = [
         ]
     ),
     NonStatTest(
-        name="test_2_four_corner_sin",
+        name="test_02_four_corner_sin",
         description="Четыре синуса, расположены в углах таким образом, чтобы максимум располагался точно в углу.\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
@@ -67,7 +67,7 @@ nonstat_tests = [
         ]
     ),
     NonStatTest(
-        name="test_3_four_corner_sin",
+        name="test_03_four_corner_sin",
         description="Четыре синуса, расположены в углах таким образом, чтобы максимум располагался точно в углу.\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
@@ -84,7 +84,7 @@ nonstat_tests = [
         ]
     ),
         NonStatTest(
-        name="test_4_point_heat_source",
+        name="test_04_point_heat_source",
         description="Имитация источника, близкого к точечному.\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
@@ -101,7 +101,7 @@ nonstat_tests = [
         ]
     ),
             NonStatTest(
-        name="test_5_point_heat_source",
+        name="test_05_point_heat_source",
         description="Имитация источника, близкого к точечному.\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
@@ -118,7 +118,7 @@ nonstat_tests = [
         ]
     ),
     NonStatTest(
-        name="test_6_two_side_sin_dt=0.1",
+        name="test_06_two_side_sin_dt=0.1",
         description="Два синуса на противоположных сторонах, в отдалении от углов\nУменьшенный шаг по времени (0.1)\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
@@ -136,7 +136,7 @@ nonstat_tests = [
         ]
     ),
     NonStatTest(
-        name="test_7_two_side_sin_dt=0.02",
+        name="test_07_two_side_sin_dt=0.02",
         description="Два синуса на противоположных сторонах, в отдалении от углов\n Самый мелкий шаг по времени (0.02)\n\nПараметры теста:\n\n",
         params=NonStatTestParams(
             cell=15,
@@ -150,6 +150,57 @@ nonstat_tests = [
             lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.0, 0.5)(t),
             lambda T, t: TMIN,
             lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5, 1.0)(t),
+            lambda T, t: TMIN,
+        ]
+    ),
+    NonStatTest(
+        name="test_08_two_side_sin_cell=25",
+        description="Два синуса на противоположных сторонах, в отдалении от углов\n 25 стержней\n\nПараметры теста:\n\n",
+        params=NonStatTestParams(
+            cell=25,
+            cell_size=11,
+            thermal_cond=1.0,
+            c_rho=20.0,
+        ),
+        f=lambda T, x, y: 0.0,
+        g=[
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.0, 0.5)(t),
+            lambda T, t: TMIN,
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5, 1.0)(t),
+            lambda T, t: TMIN,
+        ]
+    ),
+    NonStatTest(
+        name="test_09_two_side_sin_cell=50",
+        description="Два синуса на противоположных сторонах, в отдалении от углов\n 50 стержней\n\nПараметры теста:\n\n",
+        params=NonStatTestParams(
+            cell=50,
+            cell_size=4,
+            thermal_cond=1.0,
+            c_rho=20.0,
+        ),
+        f=lambda T, x, y: 0.0,
+        g=[
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.0, 0.5)(t),
+            lambda T, t: TMIN,
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5, 1.0)(t),
+            lambda T, t: TMIN,
+        ]
+    ),
+    NonStatTest(
+        name="test_10_two_side_sin_abrupt_heat_change",
+        description="Два синуса на противоположных сторонах, в отдалении от углов\nФункция g перестает быть непрерывной по времени. Резкий нагрев с 10-й секунды.\n\nПараметры теста:\n\n",
+        params=NonStatTestParams(
+            cell=15,
+            cell_size=6,
+            thermal_cond=5.0,
+            c_rho=50.0
+        ),
+        f=lambda T, x, y: 0.0,
+        g=[
+            lambda T, t: TMIN + (TMAX - TMIN) * (0.0 if T < 0.2 * 50.0 else 1.0) * get_g(0.0, 0.5)(t),
+            lambda T, t: TMIN,
+            lambda T, t: TMIN + (TMAX - TMIN) * (0.0 if T < 0.2 * 50.0 else 1.0) * get_g(0.5, 1.0)(t),
             lambda T, t: TMIN,
         ]
     ),

@@ -7,7 +7,7 @@ import logging
 import numpy as np
 
 from base_scheme import BaseScheme
-from base_stationary_scheme import BaseStationaryScheme
+from newton_solve import newton_solve
 
 from enviroment import Material
 from wraps import timer
@@ -57,12 +57,9 @@ class BaseNonStationaryScheme(BaseScheme):
         inner_tol = kwargs.get("inner_tol", 5e-4)
         U[0] = kwargs.get("u0_squared", 300.0 * np.ones(self.square_shape)) / self.w
 
-        # view_data = self.flatten_layer(self.w*U[self.cur_layer], mod=0)
-        # drawHeatmap(view_data, self.limits[:-1], f"images/direct_non_stat/plot_{self.cur_layer:03}", show_plot=0, zlim=[300, 600])
-
         for self.cur_layer in range(1, U.shape[0]):
             logger.info("Compute layer [%03d]", self.cur_layer)
-            U[self.cur_layer], _ = self.solve_layer(
+            U[self.cur_layer] = self.solve_layer(
                 tol, u_prev_squared=U[self.cur_layer - 1], inner_tol=inner_tol
             )
         U *= self.w
@@ -82,20 +79,19 @@ class BaseNonStationaryScheme(BaseScheme):
         """
 
         inner_tol = kwargs.get("inner_tol", 5e-4)
-        u_prev = u_prev_squared
+        u_prev = u_prev_squared.flatten()
         b = self.b[self.cur_layer].flatten()
 
-        U, exit_code = BaseStationaryScheme.solve(
-            self,
+        U = newton_solve(
+            b,
+            lambda u_linear: self.operator(u_linear, u_prev_linear=u_prev),
+            self.jacobian,
             tol,
-            inner_tol=inner_tol,
-            u0_squared=self.w*u_prev,
-            b=b,
-            operator=lambda u_linear: self.operator(u_linear, u_prev_linear=u_prev.flatten()),
-            jacobian=self.jacobian
+            inner_tol,
+            x0=u_prev,
         )
 
-        return U / self.w, exit_code
+        return U.reshape(self.square_shape)
 
     def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
         """

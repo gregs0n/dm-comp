@@ -2,11 +2,10 @@
 Base Stationary Scheme class module.
 """
 
-import logging
 import numpy as np
-from scipy.sparse.linalg import LinearOperator, bicgstab
 
 from base_scheme import BaseScheme
+from newton_solve import newton_solve
 from wraps import timer
 
 
@@ -14,7 +13,6 @@ class BaseStationaryScheme(BaseScheme):
     """
     template - write later
     """
-
     @timer
     def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
         """
@@ -29,52 +27,21 @@ class BaseStationaryScheme(BaseScheme):
         Returns:
             The solution of the scheme.
         """
-        logger = logging.getLogger()
-
         inner_tol = kwargs.get("inner_tol", 5e-4)
         u0 = kwargs.get("u0_squared", 300.0 * np.ones(np.prod(self.square_shape)))
-        U = u0.flatten() / self.w
+        u = u0.flatten() / self.w
         b = kwargs.get("b", self.b).flatten()
         operator = kwargs.get("operator", self.operator)
         jacobian = kwargs.get("jacobian", self.jacobian)
 
-        A = LinearOperator(
-            (U.size, U.size),
-            matvec=lambda du: jacobian(U, du),
+        sol = newton_solve(
+            b,
+            operator,
+            jacobian,
+            tol,
+            inner_tol,
+            x0=u
         )
 
-        R = b - operator(U)
-        dU, exit_code = bicgstab(
-            A,
-            R,
-            rtol=inner_tol,
-            atol=tol,
-            x0=R,
-        )
-        if exit_code:
-            logger.warning("jacobian failed with exit code: %d ON THE START", exit_code)
-            U += dU
-            U = (self.w * U).reshape(self.square_shape)
-            return U, exit_code
-
-        err = np.abs(dU).max()
-        logger.debug("\tNewton err: %.3e", err)
-        while err > tol:
-            U += dU
-            R = b - operator(U)
-            dU, exit_code = bicgstab(
-                A,
-                R,
-                rtol=inner_tol,
-                atol=tol,
-                x0=dU,
-            )
-            err = np.abs(dU).max()
-            if exit_code:
-                logger.warning("jacobian failed with exit code: %d and final error %.3e", exit_code, err)
-                U += dU
-                U = (self.w * U).reshape(self.square_shape)
-                return U, exit_code
-            logger.debug("\tNewton err: %.3e", err)
-        U = (self.w * U).reshape(self.square_shape)
-        return U, exit_code
+        u = (self.w * sol).reshape(self.square_shape)
+        return u

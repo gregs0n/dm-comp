@@ -19,9 +19,10 @@ from tests import nonstat_tests
 
 logger = logging.getLogger("single_test")
 logging.basicConfig(
-    #filename='nonstat_test.log',
+    filename='nonstat_test.log',
+    filemode='w',
     encoding='utf-8',
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s %(levelname)s\t%(message)s',
     datefmt='%d.%m.%Y %H:%M:%S'
 )
@@ -74,7 +75,7 @@ def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, t
 
     F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, dt=dt, use_sdm=use_sdm)
     scheme = Scheme(np.copy(F), np.copy(G), square_shape, material, dt, limits, use_sdm=use_sdm)
-    res = scheme.solve(1e-6, inner_tol=1e-4) # , u0_squared=600.0*np.ones_like(F[0]))
+    res = scheme.solve(1e-6, inner_tol=5e-4) # , u0_squared=600.0*np.ones_like(F[0]))
     data = scheme.flatten(res, mod=0)
 
     if scheme_no == 0:
@@ -170,5 +171,6 @@ def check_non_stat(test):
     )
 
 if __name__ == "__main__":
-    for _test in nonstat_tests:
-        runtest(_test)
+    runtest(nonstat_tests[0])
+    # for _test in nonstat_tests:
+    #     runtest(_test)
