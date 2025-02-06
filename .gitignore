@@ -1,7 +1,7 @@
 __pycache__/
 old*/
 images/
-nonstat_tests/
+*test*/
 direct_results/
 *.txt
 *.log
@@ -9,3 +9,4 @@ direct_results/
 *.bin
 *.png
 *.zip
+*.npy

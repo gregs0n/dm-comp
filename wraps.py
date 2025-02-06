@@ -6,8 +6,6 @@ import functools
 import time
 import logging
 
-
-
 def timer(func):
     """
     Template docstring (EDIT)

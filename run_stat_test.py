@@ -14,14 +14,14 @@ from direct_stationary_scheme import DirectStationaryScheme
 from dm_stationary_scheme import DMStationaryScheme
 
 from enviroment import Material  # , TestParams, Test
-from draw import draw1D, drawHeatmap, drawGif
+# from draw import draw1D, drawHeatmap, drawGif
 
-logger = logging.getLogger("single_test")
+logger = logging.getLogger()
 logging.basicConfig(
-    #filename='direct_test.log',
-    # filename='logs.txt',
+    filename='stat_test.log',
+    # filemode='w',
     encoding='utf-8',
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s %(levelname)s\t%(message)s',
     datefmt='%d.%m.%Y %H:%M:%S'
 )
@@ -84,16 +84,20 @@ def test_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho):
 
     F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, use_sdm=use_sdm)
     scheme = Scheme(np.copy(F), np.copy(G), square_shape, material, limits, use_sdm=use_sdm)
-    res, _ = scheme.solve(1e-6, inner_tol=5e-4)
-    res = scheme.flatten(res, mod=0)
-
-    drawHeatmap(
-        res,
-        limits,
-        "images/plot",
-        show_plot=1,
-        zlim=[300, 600],
-    )
+    logger.info("Started test (%d, %d) %.2f with %d equations", cell, cell_size, tcc, F.size)
+    res = scheme.solve(1e-6, inner_tol=5e-4)
+    # data = scheme.flatten(res, mod=0)
+    if scheme_no == 0:
+        # drawHeatmap(
+        #     data,
+        #     limits,
+        #     "direct",
+        #     show_plot=0,
+        #     # zlim=[300, 600],
+        # )
+        filename = "DirectStationaryScheme"
+        np.save(filename, scheme.flatten(res, mod=1))
+    logger.info("Test over")
     return F, G, res
 
 def norm_L2(x: np.ndarray, h: np.float64) -> np.float64:
@@ -106,5 +110,11 @@ def norm_L2(x: np.ndarray, h: np.float64) -> np.float64:
         return res
 
 if __name__ == "__main__":
-    suffix = "_sin"
-    folder = f"stat{suffix}/"
+    test_stat(
+        scheme_no=1,
+        use_sdm=True,
+        cell=100,
+        cell_size=10,
+        tcc=1.0,
+        crho=20.0
+    )

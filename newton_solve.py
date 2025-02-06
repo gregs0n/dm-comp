@@ -6,6 +6,7 @@ import logging
 from typing import Callable
 import numpy as np
 from scipy.sparse.linalg import LinearOperator, bicgstab
+from scipy.linalg import norm
 
 def newton_solve(
         b: np.ndarray,
@@ -29,6 +30,8 @@ def newton_solve(
     """
     logger = logging.getLogger()
 
+    alpha = 0.875
+
     x0 = kwargs.get("x0", np.ones_like(b))
     x = x0.copy()
 
@@ -39,10 +42,12 @@ def newton_solve(
 
     r = b - operator(x)
     r_norm, r_norm_prev = np.abs(r).max(), np.inf
-    dx = r.copy()
+    dx = np.ones_like(r)
 
     err = 100.0
+    logger.debug("\tNewton err\tr_norm\tdr_before\tdr_after")
     while err > tol:
+        dr_norm_before = norm(r - A(dx), ord=np.inf)
         dx, exit_code = bicgstab(
             A,
             r,
@@ -50,21 +55,33 @@ def newton_solve(
             atol=0.0,
             x0=dx,
         )
+        dr_norm_after = norm(r - A(dx), ord=np.inf)
+        dx *= alpha
         err = np.abs(dx).max()
         r = b - operator(x + dx)
         r_norm, r_norm_prev = np.abs(r).max(), r_norm
         if exit_code:
             logger.warning(
-                "\tNewton err: %.3e | r_norm: %.3e | BiCGstab FAILED(%d)",
-                err, r_norm, exit_code
+                "\t%.2e\t%.2e\t%.2e\t%.2e\tBiCGstab FAILED(%d)",
+                err, r_norm, dr_norm_before, dr_norm_after, exit_code
             )
             if r_norm > r_norm_prev:
                 logger.error("\tBAD convergence")
-                return x, exit_code
+                return x
         else:
             logger.debug(
-                "\tNewton err: %.3e | r_norm: %.3e",
-                err, r_norm
+                "\t%.2e\t%.2e\t%.2e\t%.2e",
+                err, r_norm, dr_norm_before, dr_norm_after,
             )
         x += dx
+
+    dx /= alpha
+    err = np.abs(dx).max()
+    x += (1.0 - alpha) * dx
+    r = b - operator(x)
+    r_norm = np.abs(r).max()
+    logger.debug(
+        "\t%.2e\t%.2e\t%.2e\t%.2e",
+        err, r_norm, dr_norm_before, dr_norm_after,
+    )
     return x
