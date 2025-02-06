@@ -41,7 +41,7 @@ def newton_solve(
     )
 
     r = b - operator(x)
-    r_norm, r_norm_prev = np.abs(r).max(), np.inf
+    r_norm, r_norm_prev = norm(r, ord=np.inf), np.inf
     dx = np.ones_like(r)
 
     err = 100.0
@@ -57,9 +57,9 @@ def newton_solve(
         )
         dr_norm_after = norm(r - A(dx), ord=np.inf)
         dx *= alpha
-        err = np.abs(dx).max()
+        err = norm(dx, ord=np.inf)
         r = b - operator(x + dx)
-        r_norm, r_norm_prev = np.abs(r).max(), r_norm
+        r_norm, r_norm_prev = norm(r, ord=np.inf), r_norm
         if exit_code:
             logger.warning(
                 "\t%.2e\t%.2e\t%.2e\t%.2e\tBiCGstab FAILED(%d)",
@@ -76,10 +76,10 @@ def newton_solve(
         x += dx
 
     dx /= alpha
-    err = np.abs(dx).max()
+    err = norm(dx, ord=np.inf)
     x += (1.0 - alpha) * dx
     r = b - operator(x)
-    r_norm = np.abs(r).max()
+    r_norm = norm(r, ord=np.inf)
     logger.debug(
         "\t%.2e\t%.2e\t%.2e\t%.2e",
         err, r_norm, dr_norm_before, dr_norm_after,
