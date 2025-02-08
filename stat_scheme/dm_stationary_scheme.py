@@ -1,19 +1,18 @@
 """
-SDMStationaryScheme class module.
+DMStationaryScheme class module.
 """
 
 import numpy as np
 from scipy.integrate import quad  # , nquad
 
-from base_stationary_scheme import BaseStationaryScheme
-from enviroment import Material
+from stat_scheme.base_stationary_scheme import BaseStationaryScheme
+from utils import Material
 
 
 class DMStationaryScheme(BaseStationaryScheme):
     """
     Discrete Method's Scheme.
-    Helps to compute the result faster than Direct scheme, but slower
-    than FDM due to tcc (thermal conductivity coefficient) accounting.
+    Helps to compute the result faster than Direct scheme.
     """
 
     def __init__(
@@ -33,8 +32,9 @@ class DMStationaryScheme(BaseStationaryScheme):
             material: namedtuple object for containing material properties
             limits: description of the computing area.
                 e.g. [a, b] = [0.0, 1.0].
+            use_sdm: tells wether account material's thermal conductivity or not.
         Returns:
-            the instance of the FDMStationaryScheme class.
+            the instance of the DMStationaryScheme class.
         """
         super().__init__(F, G, square_shape, material, limits)
 
@@ -228,19 +228,11 @@ class DMStationaryScheme(BaseStationaryScheme):
         Args:
             f_func: the temperature of the inner heat sources.
             g_func: list of 4 functions g(x, y) for the bound temperature:
-                [
-                    g(x=[a,b], y=a),
-
-                    g(x=b, y=[a, b]),
-
-                    g(x=[a,b], y=b),
-
-                    g(x=a, y=[a,b])
-                ]
-            square_shape: shape of the scheme.
-                Template - [cells, cells, cell_size, cell_size].
+                [g(x=[a,b], y=a), g(x=b, y=[a, b]), g(x=[a,b], y=b), g(x=a, y=[a,b])]
+            square_shape: shape of the scheme. [n, n] for discrete methods
+                and [n, n, m, m] for direct.
             limits: description of the computing area, [a, b] for
-                stationary schemes.
+                stationary schemes and [a, b, T] for non-stationary
         Returns:
             [F, G]
         """
@@ -299,14 +291,22 @@ class DMStationaryScheme(BaseStationaryScheme):
         return [F, G]
 
     @staticmethod
-    def createH(h: np.float64, thermal_cond: np.float64, stef_bolc: np.float64, use_sdm: bool = False):
+    def createH(
+        h: np.float64,
+        thermal_cond: np.float64,
+        stef_bolc: np.float64,
+        use_sdm: bool = False
+        ):
         """
-        Template docstring (EDIT)
+        Creates function H and its derivative to compute heat stream of the cell
 
         Args:
-            arg1: arg1 decsription
+            h: cell's side length
+            thermal_cond: material's thermal cond.
+            stef_bolc: Stefan-Boltzman constant (may be normed)
+            use_sdm: tells wether account material's thermal conductivity or not.
         Returns:
-            what function returns
+            H, dH
         """
         w = 100.0 if stef_bolc > 1.0 else 1.0
 
@@ -343,7 +343,12 @@ class DMStationaryScheme(BaseStationaryScheme):
 
         return H, dH
 
-    def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
+    @staticmethod
+    def flatten(
+        u_squared: np.ndarray,
+        limits: list[np.float64, np.float64],
+        **kwargs,
+    ) -> np.ndarray:
         """
         does nothing, used nowhere.
         May be removed soon.

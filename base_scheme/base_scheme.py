@@ -1,11 +1,11 @@
 """
-Base Scheme class module.
+BaseScheme class module.
 """
 
 from abc import ABC, abstractmethod
 import numpy as np
 
-from enviroment import Material
+from utils.enviroment import Material
 
 
 class BaseScheme(ABC):
@@ -50,9 +50,9 @@ class BaseScheme(ABC):
         self.stef_bolc = 5.67036713
 
     @abstractmethod
-    def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
+    def solve(self, tol: np.float64, **kwargs) -> np.ndarray:
         """
-        Abstarct method for solving schemes
+        Abstract method to solve schemes
 
         Args:
             tol: absolute tolerance of Newton's method.
@@ -78,7 +78,7 @@ class BaseScheme(ABC):
         """
         Abstract method for operator's jacobian of the scheme.
         Use in Newton's method by BiCGstab as matvec.
-        For computing uses current newton's approx of the U-function
+        For computing uses current newton's approximation of the U-function
 
         Args:
             u_linear: 1d-shape array of U function.
@@ -87,14 +87,21 @@ class BaseScheme(ABC):
             Jac(U, dU)
         """
 
+    @staticmethod
     @abstractmethod
-    def flatten(self, u_squared: np.ndarray, *args, **kwargs):
+    def flatten(
+        u_squared: np.ndarray,
+        limits: list,
+        **kwargs,
+    ) -> np.ndarray:
         """
-        Abstract method to change solutions to the [cells, cells] format.
-        Does nothing in FDM and SDM schemes.
+        Abstract method to change ndarray-s to the [cells, cells] format.
+        Does nothing in DM scheme.
 
         Args:
             u_squared: self.square_shape-like np.ndarray object.
+            limits: description of the computing area, [a, b] for
+                stationary schemes and [a, b, T] for non-stationary
         Returns:
             res: ndarray with shape (*self.square_shape[:2])
         """
@@ -117,15 +124,7 @@ class BaseScheme(ABC):
         Args:
             f_func: the temperature of the inner heat sources.
             g_func: list of 4 functions g(x, y) for the bound temperature:
-                [
-                    g(x=[a,b], y=a),
-
-                    g(x=b, y=[a, b]),
-
-                    g(x=[a,b], y=b),
-
-                    g(x=a, y=[a,b])
-                ]
+                [g(x=[a,b], y=a), g(x=b, y=[a, b]), g(x=[a,b], y=b), g(x=a, y=[a,b])]
             square_shape: shape of the scheme. [n, n] for discrete methods
                 and [n, n, m, m] for direct.
             limits: description of the computing area, [a, b] for

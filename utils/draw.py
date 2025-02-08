@@ -1,3 +1,7 @@
+"""
+Module to draw 1d/2d plots
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -13,14 +17,17 @@ def draw1D(
     ylim=[],
     legends=[],
 ):
+    """
+    Draw on 1 Ax `len(data)` plots
+    """
 
     arg = np.linspace(limits[0], limits[1], data[0].size)
     fig, ax = plt.subplots()
     ax.set_title(plot_name)
-    colors = ["blue", "red", "green"]
-    for i in range(len(data)):
-        lab = legends[i] if legends else f"plot{i+1}"
-        ax.plot(arg, data[i], label=lab)
+    # colors = ["blue", "red", "green"]
+    for (i, single_data) in enumerate(data):
+        lab = legends[i] if legends else f"plot_{i+1}"
+        ax.plot(arg, single_data, label=lab)
     if not ylim:
         ylim = [min([i.min() for i in data]), max([i.max() for i in data])]
     ax.set_yscale(yscale)
@@ -39,6 +46,9 @@ def draw1D(
 def drawHeatmap(
     data: np.ndarray, limits: list, plot_name: str, show_plot=True, zlim=[]
 ):
+    """
+    Draw one special HeatMap
+    """
     n = data.shape[0]
     fig, ax = plt.subplots()
     h = (limits[1] - limits[0]) / n
@@ -64,27 +74,27 @@ def drawHeatmap(
     del fig, ax
 
 
-def drawGif(data):
-    print(data.shape)
+# def drawGif(data):
+#     print(data.shape)
 
-    def my_func(i):
-        ax.cla()
-        sns.heatmap(
-            data[i, ...],
-            ax=ax,
-            cbar=True,
-            cmap="RdBu_r",
-            cbar_ax=cbar_ax,
-            vmin=300,
-            vmax=600,
-            square=True,
-        )
+#     def my_func(i):
+#         ax.cla()
+#         sns.heatmap(
+#             data[i, ...],
+#             ax=ax,
+#             cbar=True,
+#             cmap="RdBu_r",
+#             cbar_ax=cbar_ax,
+#             vmin=300,
+#             vmax=600,
+#             square=True,
+#         )
 
-    grid_kws = {"width_ratios": (0.9, 0.05), "wspace": 0.2}
-    fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw=grid_kws, figsize=(12, 8))
-    anim = FuncAnimation(
-        fig=fig, func=my_func, frames=data.shape[0], interval=10, blit=False
-    )
-    writergif = PillowWriter(fps=20)
-    # anim.save('plot_00.gif', writer=writergif)
-    plt.show()
+#     grid_kws = {"width_ratios": (0.9, 0.05), "wspace": 0.2}
+#     fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw=grid_kws, figsize=(12, 8))
+#     anim = FuncAnimation(
+#         fig=fig, func=my_func, frames=data.shape[0], interval=10, blit=False
+#     )
+#     writergif = PillowWriter(fps=20)
+#     # anim.save('plot_00.gif', writer=writergif)
+#     plt.show()

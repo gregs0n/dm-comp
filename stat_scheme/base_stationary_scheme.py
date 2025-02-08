@@ -1,20 +1,20 @@
 """
-Base Stationary Scheme class module.
+BaseStationaryScheme class module.
 """
 
 import numpy as np
 
 from base_scheme import BaseScheme
-from newton_solve import newton_solve
-from wraps import timer
+from utils import newton_solve
+from utils import timer
 
 
 class BaseStationaryScheme(BaseScheme):
     """
-    template - write later
+    Base class for stationary schemes.
     """
     @timer
-    def solve(self, tol: np.float64, *args, **kwargs) -> np.ndarray:
+    def solve(self, tol: np.float64, **kwargs) -> np.ndarray:
         """
         Main method to solve the scheme
 
@@ -34,7 +34,7 @@ class BaseStationaryScheme(BaseScheme):
         operator = kwargs.get("operator", self.operator)
         jacobian = kwargs.get("jacobian", self.jacobian)
 
-        sol = newton_solve(
+        sol, exit_code = newton_solve(
             b,
             operator,
             jacobian,
@@ -44,4 +44,4 @@ class BaseStationaryScheme(BaseScheme):
         )
 
         u = (self.w * sol).reshape(self.square_shape)
-        return u
+        return u, exit_code

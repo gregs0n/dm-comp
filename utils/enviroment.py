@@ -2,63 +2,15 @@
 Module template docstring
 """
 
-import pickle
 from typing import Callable
 from collections import namedtuple
 from dataclasses import dataclass
 import os
 
 import numpy as np
-from draw import draw1D
+from utils.draw import draw1D
 
 Material = namedtuple("Material", ["name", "thermal_cond", "tmin", "tmax", "crho"])
-
-TestParams = namedtuple(
-    "TestParams",
-    [
-        "square_shape",
-        "thermal_cond",
-        "limits",
-    ],
-)
-
-
-@dataclass
-class Test:
-    """
-    Class template docstring
-    """
-
-    params: TestParams
-    data: dict[str, np.ndarray]
-
-    def __repr__(self):
-        return f"tcc({self.params.thermal_cond:04.1f})_shape{self.params.square_shape}"
-
-    def get_hash(self):
-        """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
-        """
-        return f"{abs(hash(self.params)):0>16x}"
-
-    def save(self, folder: str = ""):
-        """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
-        """
-        file_path = folder + self.get_hash() + ".bin"
-        # print(file_path)
-        with open(file_path, "wb") as file:
-            pickle.dump(self.data, file)
 
 NonStatTestParams = namedtuple(
     "NonStatTestParams",
@@ -138,7 +90,6 @@ class NonStatTest:
                 legends=[legends[i]],
                 show_plot=0,
             )
-
 
 if __name__ == "__main__":
     t = NonStatTestParams(30, 6, 1.0, 20.0)

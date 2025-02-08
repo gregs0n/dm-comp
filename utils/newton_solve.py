@@ -30,58 +30,54 @@ def newton_solve(
     """
     logger = logging.getLogger()
 
-    alpha = 0.875
-
+    n_iter = 0
     x0 = kwargs.get("x0", np.ones_like(b))
     x = x0.copy()
 
     A = LinearOperator(
         (x.size, x.size),
         matvec=lambda dx: jacobian(x, dx),
+        dtype=np.float64
     )
 
     r = b - operator(x)
     r_norm, r_norm_prev = norm(r, ord=np.inf), np.inf
     dx = np.ones_like(r)
 
-    err = 100.0
-    logger.debug("\tNewton err\tr_norm\tdr_before\tdr_after")
-    while err > tol:
-        dr_norm_before = norm(r - A(dx), ord=np.inf)
-        dx, exit_code = bicgstab(
+    logger.debug("\t[nn]\t_r_norm_\tdx_norm")
+    while r_norm > tol:
+        n_iter += 1
+        dx, _ = bicgstab(
             A,
             r,
             rtol=inner_tol,
             atol=0.0,
             x0=dx,
         )
-        dr_norm_after = norm(r - A(dx), ord=np.inf)
-        dx *= alpha
-        err = norm(dx, ord=np.inf)
-        r = b - operator(x + dx)
-        r_norm, r_norm_prev = norm(r, ord=np.inf), r_norm
-        if exit_code:
+        alpha = 1.0
+        r = b - operator(x + alpha*dx)
+        r_norm = norm(r, ord=np.inf)
+        k = 0
+        while r_norm > r_norm_prev:
+            k += 1
             logger.warning(
-                "\t%.2e\t%.2e\t%.2e\t%.2e\tBiCGstab FAILED(%d)",
-                err, r_norm, dr_norm_before, dr_norm_after, exit_code
+                "\t[  ]\t%.2e\tr_prev=%.2e\talpha=%.6f",
+                r_norm, r_norm_prev, alpha
             )
-            if r_norm > r_norm_prev:
-                logger.error("\tBAD convergence")
-                return x
-        else:
-            logger.debug(
-                "\t%.2e\t%.2e\t%.2e\t%.2e",
-                err, r_norm, dr_norm_before, dr_norm_after,
-            )
+            alpha *= 0.5
+            r = b - operator(x + alpha*dx)
+            r_norm = norm(r, ord=np.inf)
+            if k > 10:
+                logger.error("Tolerance not achieved")
+                return x + alpha * dx, 1
+
+        dx *= alpha
+        r_norm_prev = r_norm
+        dx_norm = norm(dx, ord=np.inf)
+        logger.debug(
+            "\t[%02d]\t%.2e\t%.2e",
+            n_iter, r_norm, dx_norm
+        )
         x += dx
 
-    dx /= alpha
-    err = norm(dx, ord=np.inf)
-    x += (1.0 - alpha) * dx
-    r = b - operator(x)
-    r_norm = norm(r, ord=np.inf)
-    logger.debug(
-        "\t%.2e\t%.2e\t%.2e\t%.2e",
-        err, r_norm, dr_norm_before, dr_norm_after,
-    )
-    return x
+    return x, 0

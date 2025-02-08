@@ -1,5 +1,9 @@
+"""
+template
+"""
+
 import numpy as np
-from enviroment import NonStatTestParams, NonStatTest
+from utils import NonStatTestParams, NonStatTest
 
 ACTIVATION_L = 0.6
 TMIN = 3.0
@@ -205,6 +209,3 @@ nonstat_tests = [
         ]
     ),
 ]
-
-if __name__ == "__main__":
-    nonstat_tests[0].init_test_folder()

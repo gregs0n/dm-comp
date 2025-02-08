@@ -1,18 +1,22 @@
 """
-Module template docstring
+DirectNonStationaryScheme class module.
 """
 
 import numpy as np
 from numpy import float_power as fpower, fabs
 
-from base_non_stationary_scheme import BaseNonStationaryScheme
-from direct_stationary_scheme import DirectStationaryScheme
-from enviroment import Material
+from nonstat_scheme.base_non_stationary_scheme import BaseNonStationaryScheme
+from stat_scheme import DirectStationaryScheme
+from utils import Material
 
 
 class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme):
     """
-    Class template docstring
+    Direct Stationary scheme - scheme to obtain the most exact solution
+    of the complex heat conductivity non-sationary question in
+    2d slice of the square rods pack.
+
+    Used to compare other approx schemes' correctness
     """
 
     def __init__(
@@ -26,12 +30,17 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         **kwargs,
     ):
         """
-        Template docstring (EDIT)
-
         Args:
-            arg1: arg1 decsription
+            F: The inner heat
+            G: The bound heat
+            square_shape: shape of the scheme. [n, n] for discrete methods
+                and [n, n, m, m] for direct.
+            material: namedtuple object for containing material properties
+            dt: time step.
+            limits: description of the computing area, [a, b] for
+                stationary schemes.
         Returns:
-            what function returns
+            the instance of the DirectNonStationaryScheme class.
         """
         super().__init__(F, G, square_shape, material, dt, limits)
 
@@ -55,12 +64,13 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
 
     def operator(self, u_linear: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Computes c_rho * du/dt + `DirectStationaryScheme.operator(u_linear)`
 
         Args:
-            arg1: arg1 decsription
+            u_linear: 1-d array of the u - temperature.
+            u_prev_linear: U array on the previous layer.
         Returns:
-            what function returns
+            1-d array  of the c_rho * du/dt + A(u)
         """
 
         return (
@@ -70,12 +80,15 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
 
     def jacobian(self, u_linear: np.ndarray, du_linear: np.ndarray) -> np.ndarray:
         """
-        Template docstring (EDIT)
+        Computes gradient value in the U-point of A-operator.
+        Use in Newton's method by BiCGstab as matvec to find newton's dU.
+        For computing uses current newton's approx of the U-function.
 
         Args:
-            arg1: arg1 decsription
+            u_linear: 1d-shape array of U function.
+            du_linear: 1d-shape array of dU function.
         Returns:
-            what function returns
+            c_rho*du + `DirectStationaryScheme.jacobian(U, dU)`: 1d_shape array.
         """
 
         return (
@@ -94,10 +107,16 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
         **kwargs,
     ) -> list[np.ndarray, np.ndarray]:
         """
-        Abstract static function to obtain F and G arrays
+        Static function to obtain F and G arrays.
+        Parameters are the same as in __init__()
 
         Args:
-            f_func
+            f_func: the temperature of the inner heat sources.
+            g_func: list of 4 functions g(x, y) for the bound temperature:
+                [g(x=[a,b], y=a), g(x=b, y=[a, b]), g(x=[a,b], y=b), g(x=a, y=[a,b])]
+            square_shape: shape of the scheme. [n, n] for discrete methods
+                and [n, n, m, m] for direct.
+            limits: description of the computing area, [a, b, T] for non-stationary
         Returns:
             [F, G]
         """
@@ -144,14 +163,3 @@ class DirectNonStationaryScheme(BaseNonStationaryScheme, DirectStationaryScheme)
                     )
 
         return [F, G]
-
-    def flatten_layer(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
-        """
-        Template docstring (EDIT)
-
-        Args:
-            arg1: arg1 decsription
-        Returns:
-            what function returns
-        """
-        return DirectStationaryScheme.flatten(self, u_squared, mod=kwargs["mod"])

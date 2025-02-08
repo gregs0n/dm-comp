@@ -5,15 +5,15 @@ Direct Stationary Scheme class module.
 import numpy as np
 from numpy import float_power as fpower, fabs
 
-from base_stationary_scheme import BaseStationaryScheme
-from enviroment import Material
+from stat_scheme.base_stationary_scheme import BaseStationaryScheme
+from utils import Material
 
 
 class DirectStationaryScheme(BaseStationaryScheme):
     """
     Direct Stationary scheme - scheme to obtain the most exact solution
     of the complex heat conductivity sationary question in
-    2d slice of the square rods square pack.
+    2d slice of the square rods pack.
 
     Used to compare other approx schemes' correctness
     """
@@ -35,7 +35,7 @@ class DirectStationaryScheme(BaseStationaryScheme):
                 and [n, n, m, m] for direct.
             material: namedtuple object for containing material properties
             limits: description of the computing area, [a, b] for
-                stationary schemes and [a, b, T] for non-stationary
+                stationary schemes.
         Returns:
             the instance of the DirectStationaryScheme class.
         """
@@ -303,19 +303,11 @@ class DirectStationaryScheme(BaseStationaryScheme):
         Args:
             f_func: the temperature of the inner heat sources.
             g_func: list of 4 functions g(x, y) for the bound temperature:
-                [
-                    g(x=[a,b], y=a),
-
-                    g(x=b, y=[a, b]),
-
-                    g(x=[a,b], y=b),
-
-                    g(x=a, y=[a,b])
-                ]
-            square_shape: shape of the scheme.
-                Template - [cells, cells, cell_size, cell_size].
+                [g(x=[a,b], y=a), g(x=b, y=[a, b]), g(x=[a,b], y=b), g(x=a, y=[a,b])]
+            square_shape: shape of the scheme. [n, n] for discrete methods
+                and [n, n, m, m] for direct.
             limits: description of the computing area, [a, b] for
-                stationary schemes.
+                stationary schemes and [a, b, T] for non-stationary
         Returns:
             [F, G]
         """
@@ -355,21 +347,25 @@ class DirectStationaryScheme(BaseStationaryScheme):
 
         return [F, G]
 
-    def flatten(self, u_squared: np.ndarray, *args, **kwargs) -> np.ndarray:
+    @staticmethod
+    def flatten(
+        u_squared: np.ndarray,
+        limits: list[np.float64, np.float64],
+        **kwargs,
+    ) -> np.ndarray:
         """
-        Method to change solutions to the [cells, cells] format.
-
+        Method to change ndarray-s to the [cells, cells] format.
 
         Args:
             u_squared: self.square_shape-like np.ndarray object.
-            mod: if mod=0 - just makes plain 2-d array for heatmap.
-                if mod=1 approximatly integrates U across each cell.
+            limits: description of the computing area, [a, b] for stationary
+            mod: 0 - returns max information. 1 - makes array compatible with DM solutions
         Returns:
-            u_flat: ndarray with shape (*self.square_shape[:2])
+            res: ndarray with shape (*self.square_shape[:2])
         """
         mod = kwargs.get("mod", 0)
-        cells = self.square_shape[0]
-        cell_size = self.square_shape[2]
+        cells = u_squared.shape[0]
+        cell_size = u_squared.shape[2]
         if mod == 0:
             flat_size = cells * cell_size
             flat_shape = (flat_size, flat_size)
@@ -384,7 +380,8 @@ class DirectStationaryScheme(BaseStationaryScheme):
                                 i, j, i2, j2
                             ]
         else:
-            h2 = self.h * self.h
+            h = (limits[1] - limits[0]) / ((cell_size - 1) * cells)
+            h2 = h * h
             u_flat = np.zeros(shape=(cells, cells))
             for i_cell in range(cells):
                 for j_cell in range(cells):
@@ -411,6 +408,6 @@ class DirectStationaryScheme(BaseStationaryScheme):
                         )
                     )
                     u_flat[i_cell, j_cell] *= (
-                        cells / (self.limits[1] - self.limits[0])
+                        cells / (limits[1] - limits[0])
                     ) ** 2
         return u_flat

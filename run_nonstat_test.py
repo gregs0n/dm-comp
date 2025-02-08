@@ -1,6 +1,8 @@
 #!/home/gregs0n/venvs/numpy-venv/bin/python3
 """
-pass
+Runs test from `nonstat_test_data.py`
+Single test launches all three schemes and compares them between each other.
+Then saves everything to this test's folder.
 """
 
 import os
@@ -9,37 +11,19 @@ import logging
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import numpy as np
+from scipy.linalg import norm
 
-from direct_non_stationary_scheme import DirectNonStationaryScheme
-from dm_non_stationary_scheme import DMNonStationaryScheme
+from nonstat_scheme import DirectNonStationaryScheme, DMNonStationaryScheme
 
-from enviroment import Material, NonStatTest
-from draw import draw1D, drawHeatmap
-from tests import nonstat_tests
+from utils import Material, NonStatTest, draw1D, drawHeatmap
+from nonstat_test_data import nonstat_tests
 
-logger = logging.getLogger("single_test")
-logging.basicConfig(
-    filename='nonstat_test.log',
-    filemode='w',
-    encoding='utf-8',
-    level=logging.DEBUG,
-    format='%(asctime)s %(levelname)s\t%(message)s',
-    datefmt='%d.%m.%Y %H:%M:%S'
-)
+logger = logging.getLogger()
 
 non_stat_schemes = [DirectNonStationaryScheme, DMNonStationaryScheme]
 
-def norm_L2(x: np.ndarray, h: np.float64) -> np.float64:
-    if x.ndim != 2:
-        return -1
-    else:
-        h2 = h*h
-        x_sqr = x*x
-        res = h2 * np.sum(x_sqr)
-        return res
-
 def runtest(test: NonStatTest):
-    os.chdir("nonstat_tests")
+    os.chdir(".tests/nonstat_tests")
     test.init_test_folder()
     os.chdir(test.name)
     params = test.params
@@ -56,7 +40,7 @@ def runtest(test: NonStatTest):
 
     logger.info("End test `%s`", test.name)
 
-    os.chdir("../..")
+    os.chdir("../../..")
 
 def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
     Scheme = non_stat_schemes[scheme_no]
@@ -75,7 +59,7 @@ def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, t
 
     F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, dt=dt, use_sdm=use_sdm)
     scheme = Scheme(np.copy(F), np.copy(G), square_shape, material, dt, limits, use_sdm=use_sdm)
-    res = scheme.solve(1e-6, inner_tol=5e-4) # , u0_squared=600.0*np.ones_like(F[0]))
+    res, _ = scheme.solve(1e-6, inner_tol=5e-4) # , u0_squared=600.0*np.ones_like(F[0]))
     data = scheme.flatten(res, mod=0)
 
     if scheme_no == 0:
@@ -110,8 +94,8 @@ def check_non_stat(test):
         or sdm.shape != direct.shape):
         exit()
 
-    err_fdm_raw = np.abs(direct - fdm)
-    err_sdm_raw = np.abs(direct - sdm)
+    err_fdm_raw = direct - fdm
+    err_sdm_raw = direct - sdm
 
     err_fdm_L_inf = np.zeros(direct.shape[0]-1)
     err_sdm_L_inf = np.zeros(direct.shape[0]-1)
@@ -123,10 +107,10 @@ def check_non_stat(test):
     indexes = [1] + list(range(n_plots_step, direct.shape[0], n_plots_step))
 
     for i in range(direct.shape[0]-1):
-        err_fdm_L_inf[i] = np.max(err_fdm_raw[i+1])
-        err_sdm_L_inf[i] = np.max(err_sdm_raw[i+1])
-        err_fdm_L_2[i] = norm_L2(err_fdm_raw[i+1], 1.0/test.params.cell)
-        err_sdm_L_2[i] = norm_L2(err_sdm_raw[i+1], 1.0/test.params.cell)
+        err_fdm_L_inf[i] = norm(err_fdm_raw[i+1].flatten(), ord=np.inf) / norm(direct[i+1].flatten(), ord=np.inf)
+        err_sdm_L_inf[i] = norm(err_sdm_raw[i+1].flatten(), ord=np.inf) / norm(direct[i+1].flatten(), ord=np.inf)
+        err_fdm_L_2[i] = norm(err_fdm_raw[i+1].flatten()) / norm(direct[i+1].flatten())
+        err_sdm_L_2[i] = norm(err_sdm_raw[i+1].flatten()) / norm(direct[i+1].flatten())
 
     os.chdir(test.err_fdm_folder)
     for i in indexes:
@@ -153,7 +137,7 @@ def check_non_stat(test):
             err_sdm_L_inf
         ],
         [0, test.params.T],
-        "Абсолютная (L_inf) ошибка методов по времени",
+        "Относительная (L_inf) ошибка методов по времени",
         yscale='linear',
         legends=["FDM", "SDM"],
         show_plot=0
@@ -164,13 +148,21 @@ def check_non_stat(test):
             err_sdm_L_2
         ],
         [0, test.params.T],
-        "Абсолютная (L_2) ошибка методов по времени",
+        "Относительная (L_2) ошибка методов по времени",
         yscale='linear',
         legends=["FDM", "SDM"],
         show_plot=0
     )
 
 if __name__ == "__main__":
-    runtest(nonstat_tests[0])
-    # for _test in nonstat_tests:
-    #     runtest(_test)
+    logging.basicConfig(
+        filename='nonstat_test.log',
+        filemode='w',
+        encoding='utf-8',
+        level=logging.INFO,
+        format='%(asctime)s\t%(levelname)s\t%(message)s',
+        datefmt='%d.%m.%Y %H:%M:%S'
+    )
+    # runtest(nonstat_tests[0])
+    for _test in nonstat_tests:
+        runtest(_test)
