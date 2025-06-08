@@ -11,10 +11,10 @@ environ["OMP_NUM_THREADS"] = "4"
 
 import numpy as np
 
-from stat_scheme import DirectStationaryScheme, DMStationaryScheme
+from stat_scheme import DirectStationaryScheme, DMStationaryScheme, AsymptoticStationaryScheme
 from utils import Material, drawHeatmap
 
-stat_schemes = [DirectStationaryScheme, DMStationaryScheme]
+stat_schemes = [DirectStationaryScheme, DMStationaryScheme, AsymptoticStationaryScheme]
 
 def GetStatFunc():
     """
@@ -76,12 +76,14 @@ def test_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho):
     scheme = Scheme(np.copy(F), np.copy(G), square_shape, material, limits, use_sdm=use_sdm)
     logger.info("Started test (%d, %d) %.2f with %d equations", cell, cell_size, tcc, F.size)
     res, _ = scheme.solve(1e-6, inner_tol=5e-4)
-    data = Scheme.flatten(res, square_shape, limits, mod=0)
-    if scheme_no == 0:
+    # data = Scheme.flatten(res, square_shape, limits, mod=0)
+    data = Scheme.flatten(res, limits, mod=0)
+    if True or scheme_no == 0:
         drawHeatmap(
             data,
             limits,
-            "direct",
+            # "direct",
+            "asymptotic",
             show_plot=1,
             # zlim=[300, 600],
         )
@@ -91,16 +93,16 @@ def test_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho):
 if __name__ == "__main__":
     logging.basicConfig(
         filename='stat_test.log',
-        # filemode='w',
+        filemode='w',
         encoding='utf-8',
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='%(asctime)s %(levelname)s\t%(message)s',
         datefmt='%d.%m.%Y %H:%M:%S'
     )
     test_stat(
-        scheme_no=0,
-        use_sdm=False,
-        cell=10,
+        scheme_no=2,
+        use_sdm=True,
+        cell=200,
         cell_size=6,
         tcc=1.0,
         crho=20.0

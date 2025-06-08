@@ -92,6 +92,31 @@ class DMNonStationaryScheme(BaseNonStationaryScheme, DMStationaryScheme):
         )
 
     @staticmethod
+    def flatten(
+        u_squared: np.ndarray,
+        limits: list,
+        **kwargs,
+    ) -> np.ndarray:
+        """
+        Method to change ndarray-s to the [cells, cells] format at every layer.
+        Does nothing in DM scheme.
+
+        Args:
+            u_squared: self.square_shape-like np.ndarray object.
+            limits: description of the computing area, [a, b, T] for non-stationary
+            mod: 0 - returns max information. 1 - makes array compatible with DM solutions
+        Returns:
+            res: ndarray with shape (*self.square_shape[:2])
+        """
+        mod = kwargs.get("mod", 0)
+        first_layer = DMStationaryScheme.flatten(u_squared[0], limits, mod=mod)
+        res = np.zeros((u_squared.shape[0], *first_layer.shape))
+        res[0] = first_layer
+        for (i, layer) in enumerate(u_squared[1:], start=1):
+            res[i] = DMStationaryScheme.flatten(layer, limits, mod=mod)
+        return res
+
+    @staticmethod
     def GetBoundaries(
         f_func,
         g_func: list,

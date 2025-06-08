@@ -11,6 +11,7 @@ import logging
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.linalg import norm
 
 from nonstat_scheme import DirectNonStationaryScheme, DMNonStationaryScheme
@@ -32,15 +33,17 @@ def runtest(test: NonStatTest):
     logger.info("Num layers - %d", int(params.T/params.dt))
     logger.info("crho/dt = %f", params.c_rho / params.dt)
 
-    run_nonstat_scheme(test, 0, 0, *params)
-    run_nonstat_scheme(test, 1, 0, *params)
-    run_nonstat_scheme(test, 1, 1, *params)
+    # run_nonstat_scheme(test, 0, 0, *params)
+    # run_nonstat_scheme(test, 1, 0, *params)
+    # run_nonstat_scheme(test, 1, 1, *params)
 
-    check_non_stat(test)
+    [err_fdm_L_2, err_sdm_L_2] = check_non_stat(test)
 
     logger.info("End test `%s`", test.name)
 
     os.chdir("../../..")
+
+    return [err_fdm_L_2, err_sdm_L_2]
 
 def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, tcc, crho, T, dt):
     Scheme = non_stat_schemes[scheme_no]
@@ -60,7 +63,7 @@ def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, t
     F, G = Scheme.GetBoundaries(f, g, square_shape, material, limits, stef_bolc, dt=dt, use_sdm=use_sdm)
     scheme = Scheme(np.copy(F), np.copy(G), square_shape, material, dt, limits, use_sdm=use_sdm)
     res, _ = scheme.solve(1e-6, inner_tol=5e-4) # , u0_squared=600.0*np.ones_like(F[0]))
-    data = scheme.flatten(res, mod=0)
+    data = scheme.flatten(res, limits, mod=0)
 
     if scheme_no == 0:
         n_plots = 10
@@ -83,7 +86,7 @@ def run_nonstat_scheme(test: NonStatTest, scheme_no, use_sdm, cell, cell_size, t
     else:
         filename += "_FDM"
     logger.info("Scheme %s finished", filename)
-    np.save(filename, scheme.flatten(res, mod=1))
+    np.save(filename, Scheme.flatten(res, limits, mod=1))
 
 def check_non_stat(test):
 
@@ -113,46 +116,88 @@ def check_non_stat(test):
         err_sdm_L_2[i] = norm(err_sdm_raw[i+1].flatten()) / norm(direct[i+1].flatten())
 
     os.chdir(test.err_fdm_folder)
-    for i in indexes:
-        drawHeatmap(
-            err_fdm_raw[i],
-            [0.0, 1.0],
-            f"plot_{i:03}",
-            show_plot=0,
-        )
+    # for i in indexes:
+    #     drawHeatmap(
+    #         err_fdm_raw[i],
+    #         [0.0, 1.0],
+    #         f"plot_{i:03}",
+    #         show_plot=0,
+    #     )
 
     os.chdir("..")
     os.chdir(test.err_sdm_folder)
-    for i in indexes:
-        drawHeatmap(
-            err_sdm_raw[i],
-            [0.0, 1.0],
-            f"plot_{i:03}",
-            show_plot=0,
-        )
+    # for i in indexes:
+    #     drawHeatmap(
+    #         err_sdm_raw[i],
+    #         [0.0, 1.0],
+    #         f"plot_{i:03}",
+    #         show_plot=0,
+    #     )
     os.chdir("..")
-    draw1D(
-        [
-            err_fdm_L_inf,
-            err_sdm_L_inf
-        ],
-        [0, test.params.T],
-        "Относительная (L_inf) ошибка методов по времени",
-        yscale='linear',
-        legends=["FDM", "SDM"],
-        show_plot=0
-    )
-    draw1D(
-        [
-            err_fdm_L_2,
-            err_sdm_L_2
-        ],
-        [0, test.params.T],
-        "Относительная (L_2) ошибка методов по времени",
-        yscale='linear',
-        legends=["FDM", "SDM"],
-        show_plot=0
-    )
+    # draw1D(
+    #     [
+    #         err_fdm_L_inf,
+    #         err_sdm_L_inf
+    #     ],
+    #     [0, test.params.T],
+    #     "Относительная (L_inf) ошибка методов по времени",
+    #     yscale='linear',
+    #     legends=["FDM", "SDM"],
+    #     show_plot=0
+    # )
+    # draw1D(
+    #     [
+    #         err_fdm_L_2,
+    #         err_sdm_L_2
+    #     ],
+    #     [0, test.params.T],
+    #     "Относительная (L_2) ошибка методов по времени",
+    #     yscale='linear',
+    #     legends=["FDM", "SDM"],
+    #     show_plot=0
+    # )
+
+    return [err_fdm_L_2, err_sdm_L_2]
+
+def loc_draw1D(
+    data: list,
+    limits: list,
+    plot_name: str,
+    yscale="linear",
+    show_plot=True,
+    ylim=[],
+    legends=[],
+):
+
+    arg = np.linspace(limits[0], limits[1], data[0].size)
+    fig, ax = plt.subplots()
+    ax.set_title(plot_name)
+    colors = ["blue", "orange", "green", "red", "purple", "brown", "pink"]
+
+    for (i, single_data) in enumerate(data):
+        lab = legends[i] if legends else f"plot_{i+1}"
+        ax.plot(
+            arg,
+            single_data,
+            label=lab,
+            color=colors[i//2],
+            #marker="o" if i%2 == 0 else "s",
+            linestyle='-' if i%2 == 0 else '--',
+            #linewidth=1.25,
+        )
+    if not ylim:
+        ylim = [min([i.min() for i in data]), max([i.max() for i in data])]
+    ax.set_yscale(yscale)
+    ax.set_ylim(ymin=ylim[0], ymax=ylim[1])
+    # ax.set_xlim(xmin=1.0 / limits[0], xmax=1.0 / limits[1])
+    ax.grid(True)
+    ax.legend()
+    if show_plot:
+        plt.show()
+    else:
+        fig.savefig(plot_name + ".png")
+    plt.close()
+    del fig, ax
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -164,5 +209,26 @@ if __name__ == "__main__":
         datefmt='%d.%m.%Y %H:%M:%S'
     )
     # runtest(nonstat_tests[0])
-    for _test in nonstat_tests:
-        runtest(_test)
+
+    thermal_conds = [1.0, 5.0, 10.0, 20.0]
+    errs_L2 = {tcc: [[], []] for tcc in thermal_conds}
+    master_tests = [nonstat_tests[-2], nonstat_tests[0], nonstat_tests[-1], nonstat_tests[1]]
+
+    for _test in master_tests:
+        errs_L2[_test.params.thermal_cond] = runtest(_test)
+
+    data_L2 = []
+    # data_L_inf = []
+    plot_legends = []
+    for tcc in thermal_conds:
+        data_L2 += list(map(np.array, errs_L2[tcc]))
+        plot_legends += [rf"FDM:$\lambda$={tcc}", rf"SDM:$\lambda$={tcc}"]
+
+    loc_draw1D(
+        data_L2,
+        [0, nonstat_tests[0].params.T],
+        "fdm & sdm L2-errors",
+        legends=plot_legends,
+        yscale="linear",
+        show_plot=1,
+    )

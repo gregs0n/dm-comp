@@ -43,9 +43,10 @@ def newton_solve(
     r = b - operator(x)
     r_norm, r_norm_prev = norm(r, ord=np.inf), np.inf
     dx = np.ones_like(r)
+    dx_norm = norm(dx, ord=np.inf)
 
     logger.debug("\t[nn]\t_r_norm_\tdx_norm")
-    while r_norm > tol:
+    while r_norm > tol and dx_norm > 1e-11:
         n_iter += 1
         dx, _ = bicgstab(
             A,

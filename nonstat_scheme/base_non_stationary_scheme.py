@@ -2,6 +2,8 @@
 BaseNonStationaryScheme class module.
 """
 
+from abc import abstractmethod
+
 import logging
 import numpy as np
 
@@ -103,36 +105,3 @@ class BaseNonStationaryScheme(BaseScheme):
         )
 
         return U.reshape(self.square_shape), exit_code
-
-    @staticmethod
-    def flatten(
-        u_squared: np.ndarray,
-        limits: list,
-        **kwargs,
-    ) -> np.ndarray:
-        """
-        Method to change ndarray-s to the [cells, cells] format at every layer.
-        Does nothing in DM scheme.
-
-        Args:
-            u_squared: self.square_shape-like np.ndarray object.
-            limits: description of the computing area, [a, b, T] for non-stationary
-            mod: 0 - returns max information. 1 - makes array compatible with DM solutions
-        Returns:
-            res: ndarray with shape (*self.square_shape[:2])
-        """
-        mod = kwargs.get("mod", 0)
-        if mod > 1 or u_squared.ndims != 5:
-            return u_squared
-
-        cells = u_squared.shape[0]
-        cell_size = u_squared.shape[2]
-        if mod == 0:
-            flat_size = cells * cell_size
-            res = np.zeros((u_squared.shape[0], flat_size, flat_size))
-        else:
-            res = np.zeros(u_squared.shape[:3])
-        for (i, layer) in enumerate(u_squared):
-            res[i] = BaseScheme.flatten(layer, limits, mod=mod)
-
-        return res

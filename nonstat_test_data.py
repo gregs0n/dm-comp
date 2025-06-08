@@ -208,4 +208,38 @@ nonstat_tests = [
             lambda T, t: TMIN,
         ]
     ),
+    NonStatTest(
+        name="test_11_two_side_sin_master",
+        description="Два синуса на противоположных сторонах, в отдалении от углов\nТест для ВКР с динамикой теплопроводности.\n\nПараметры теста:\n\n",
+        params=NonStatTestParams(
+            cell=15,
+            cell_size=6,
+            thermal_cond=1.0,
+            c_rho=20.0
+        ),
+        f=lambda T, x, y: 0.0,
+        g=[
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.0, 0.5)(t),
+            lambda T, t: TMIN,
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5, 1.0)(t),
+            lambda T, t: TMIN,
+        ]
+    ),
+    NonStatTest(
+        name="test_12_two_side_sin_master",
+        description="Два синуса на противоположных сторонах, в отдалении от углов\nТест для ВКР с динамикой теплопроводности.\n\nПараметры теста:\n\n",
+        params=NonStatTestParams(
+            cell=15,
+            cell_size=6,
+            thermal_cond=10.0,
+            c_rho=20.0
+        ),
+        f=lambda T, x, y: 0.0,
+        g=[
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.0, 0.5)(t),
+            lambda T, t: TMIN,
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5, 1.0)(t),
+            lambda T, t: TMIN,
+        ]
+    ),
 ]

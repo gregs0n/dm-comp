@@ -9,7 +9,7 @@ from scipy.linalg import norm
 from itertools import product
 import logging
 
-from stat_scheme import DirectStationaryScheme, DMStationaryScheme
+from stat_scheme import DirectStationaryScheme, DMStationaryScheme, AsymptoticStationaryScheme
 
 from run_stat_test import GetStatFunc
 from utils import Material
@@ -35,7 +35,9 @@ def loadTest():
     f, g = GetStatFunc()
     material = Material("template", 20.0, 0.0, 1.0, 1.0)
 
-    for tcc, cell in product(thermal_conds[-1:], cells):
+    prev_tcc = -1
+
+    for tcc, cell in product(thermal_conds, cells):
 
         result_folder = f".tests/stat_results/tcc{int(tcc)}/"
 
@@ -114,6 +116,59 @@ def loadTest():
         if not exit_code:
             np.save(result_folder + f"direct/{cell:02d}", direct_res)
 
+        # if tcc == prev_tcc:
+        #     continue
+        # square_shape = [200, 200]
+        # F, G = AsymptoticStationaryScheme.GetBoundaries(
+        #     f, g,
+        #     square_shape,
+        #     material,
+        #     limits,
+        #     stef_bolc,
+        #     use_sam=False
+        # )
+        # fam_scheme = AsymptoticStationaryScheme(
+        #     F, G,
+        #     square_shape,
+        #     material,
+        #     limits,
+        #     use_sam=False
+        # )
+
+        # logger.info(
+        #     "Started FAM (%d) %.2f with %d equations",
+        #     cell, tcc, F.size
+        # )
+        # fam_res, exit_code = fam_scheme.solve(tol=1e-6, inner_tol=5e-4)
+        # if not exit_code:
+        #     np.save(result_folder + "fam", fam_res)
+
+        # F, G = AsymptoticStationaryScheme.GetBoundaries(
+        #     f, g,
+        #     square_shape,
+        #     material,
+        #     limits,
+        #     stef_bolc,
+        #     use_sam=True
+        # )
+        # sam_scheme = AsymptoticStationaryScheme(
+        #     F, G,
+        #     square_shape,
+        #     material,
+        #     limits,
+        #     use_sam=True
+        # )
+
+        # logger.info(
+        #     "Started SAM (%d) %.2f with %d equations",
+        #     cell, tcc, F.size
+        # )
+        # sam_res, exit_code = sam_scheme.solve(tol=1e-6, inner_tol=5e-4)
+        # if not exit_code:
+        #     np.save(result_folder + "sam", sam_res)
+
+        # prev_tcc = tcc
+
 
 def checkTest():
     start, finish = 10, 50
@@ -148,6 +203,25 @@ def checkTest():
         #     norm((direct_res - sdm_res).flatten(), ord=np.inf)
         #     / norm(direct_res.flatten(), ord=np.inf)
         # )
+
+        # fam_res = AsymptoticStationaryScheme.flatten(
+        #     np.load(result_folder + "fam.npy"),
+        #     limits,
+        #     square_shape=[cell, cell]
+        # )
+        # sam_res = AsymptoticStationaryScheme.flatten(
+        #     np.load(result_folder + "sam.npy"),
+        #     limits,
+        #     square_shape=[cell, cell]
+        # )
+
+        # errs_L2[tcc][0].append(
+        #     norm((direct_res - fam_res).flatten()) / norm(direct_res.flatten())
+        # )
+        # errs_L2[tcc][1].append(
+        #     norm((direct_res - sam_res).flatten()) / norm(direct_res.flatten())
+        # )
+
         print("Ready cell", cell)
 
     data_L2 = []
