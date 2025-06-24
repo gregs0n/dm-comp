@@ -242,4 +242,55 @@ nonstat_tests = [
             lambda T, t: TMIN,
         ]
     ),
+    NonStatTest(
+        name="test_13_two_side_sin_dt=0.5",
+        description="Два синуса на противоположных сторонах, в отдалении от углов\n шаг по времени (0.5)\n\nПараметры теста:\n\n",
+        params=NonStatTestParams(
+            cell=15,
+            cell_size=6,
+            thermal_cond=5.0,
+            c_rho=20.0,
+            dt=0.5
+        ),
+        f=lambda T, x, y: 0.0,
+        g=[
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.0, 0.5)(t),
+            lambda T, t: TMIN,
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5, 1.0)(t),
+            lambda T, t: TMIN,
+        ]
+    ),
+    NonStatTest(
+        name="test_14_two_side_sin_T=100.0",
+        description="Два синуса на противоположных сторонах, в отдалении от углов\n Проверка асмиптотического метода на большем отрезке по времени\n\nПараметры теста:\n\n",
+        params=NonStatTestParams(
+            cell=15,
+            cell_size=6,
+            thermal_cond=5.0,
+            c_rho=20.0,
+            T=200.0,
+            dt=4.0
+        ),
+        f=lambda T, x, y: 0.0,
+        g=[
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.0, 0.5)(t),
+            lambda T, t: TMIN,
+            lambda T, t: TMIN + (TMAX - TMIN) * get_activation(50.0)(T) * get_g(0.5, 1.0)(t),
+            lambda T, t: TMIN,
+        ]
+    ),
+]
+
+dt_changes_tests = [
+    nonstat_tests[0], # dt=1
+    nonstat_tests[13],# dt=0.5
+    nonstat_tests[6], # dt=0.1
+    nonstat_tests[7], # dt=0.02
+]
+
+lambda_changes_tests = [
+    nonstat_tests[11], # 1.0
+    nonstat_tests[0],  # 5.0
+    nonstat_tests[12], # 10.0
+    nonstat_tests[1],  # 20.0
 ]

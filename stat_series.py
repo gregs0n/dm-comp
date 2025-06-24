@@ -37,142 +37,143 @@ def loadTest():
 
     prev_tcc = -1
 
-    for tcc, cell in product(thermal_conds, cells):
+    square_shape = [250, 250]
+    F, G = AsymptoticStationaryScheme.GetBoundaries(
+        f, g,
+        square_shape,
+        material,
+        limits,
+        stef_bolc,
+        use_sm=False
+    )
+    fam_scheme = AsymptoticStationaryScheme(
+        F, G,
+        square_shape,
+        material,
+        limits,
+        use_sm=False
+    )
+
+    logger.info(
+        "Started FAM (%d) %.2f with %d equations",
+        10, 1, 250*250
+    )
+    fam_res, exit_code = fam_scheme.solve(tol=1e-6, inner_tol=5e-4)
+    if not exit_code:
+        np.save(".tests/stat_results/fam", fam_res)
+
+    # for tcc, cell in product(thermal_conds, cells):
+    for tcc in thermal_conds:
 
         result_folder = f".tests/stat_results/tcc{int(tcc)}/"
 
         material = Material("template", tcc, 0.0, 1.0, 1.0)
 
-        square_shape = [cell, cell]
+        # square_shape = [cell, cell]
 
-        F, G = DMStationaryScheme.GetBoundaries(
-            f, g,
-            square_shape,
-            material,
-            limits,
-            stef_bolc,
-            use_sdm=False
-        )
-        fdm_scheme = DMStationaryScheme(
-            F, G,
-            square_shape,
-            material,
-            limits,
-            use_sdm=False
-        )
+        # F, G = DMStationaryScheme.GetBoundaries(
+        #     f, g,
+        #     square_shape,
+        #     material,
+        #     limits,
+        #     stef_bolc,
+        #     use_sdm=False
+        # )
+        # fdm_scheme = DMStationaryScheme(
+        #     F, G,
+        #     square_shape,
+        #     material,
+        #     limits,
+        #     use_sdm=False
+        # )
 
-        logger.info(
-            "Started FDM (%d) %.2f with %d equations",
-            cell, tcc, F.size
-        )
-        fdm_res, exit_code = fdm_scheme.solve(tol=1e-6, inner_tol=5e-4)
-        if not exit_code:
-            np.save(result_folder + f"fdm/{cell:02d}", fdm_res)
+        # logger.info(
+        #     "Started FDM (%d) %.2f with %d equations",
+        #     cell, tcc, F.size
+        # )
+        # fdm_res, exit_code = fdm_scheme.solve(tol=1e-6, inner_tol=5e-4)
+        # if not exit_code:
+        #     np.save(result_folder + f"fdm/{cell:02d}", fdm_res)
 
-        F, G = DMStationaryScheme.GetBoundaries(
-            f, g,
-            square_shape,
-            material,
-            limits,
-            stef_bolc,
-            use_sdm=True
-        )
-        sdm_scheme = DMStationaryScheme(
-            F, G,
-            square_shape,
-            material,
-            limits,
-            use_sdm=True
-        )
+        # F, G = DMStationaryScheme.GetBoundaries(
+        #     f, g,
+        #     square_shape,
+        #     material,
+        #     limits,
+        #     stef_bolc,
+        #     use_sdm=True
+        # )
+        # sdm_scheme = DMStationaryScheme(
+        #     F, G,
+        #     square_shape,
+        #     material,
+        #     limits,
+        #     use_sdm=True
+        # )
 
-        logger.info(
-            "Started SDM (%d) %.2f with %d equations",
-            cell, tcc, F.size
-        )
-        sdm_res, exit_code = sdm_scheme.solve(tol=1e-6, inner_tol=5e-4)
-        if not exit_code:
-            np.save(result_folder + f"sdm/{cell:02d}", sdm_res)
+        # logger.info(
+        #     "Started SDM (%d) %.2f with %d equations",
+        #     cell, tcc, F.size
+        # )
+        # sdm_res, exit_code = sdm_scheme.solve(tol=1e-6, inner_tol=5e-4)
+        # if not exit_code:
+        #     np.save(result_folder + f"sdm/{cell:02d}", sdm_res)
 
-        square_shape = [cell, cell, direct_dots[cell], direct_dots[cell]]
-        F, G = DirectStationaryScheme.GetBoundaries(
-            f, g,
-            square_shape,
-            material,
-            limits,
-            stef_bolc
-        )
-        direct_scheme = DirectStationaryScheme(
-            F, G,
-            square_shape,
-            material,
-            limits
-        )
+        # square_shape = [cell, cell, direct_dots[cell], direct_dots[cell]]
+        # F, G = DirectStationaryScheme.GetBoundaries(
+        #     f, g,
+        #     square_shape,
+        #     material,
+        #     limits,
+        #     stef_bolc
+        # )
+        # direct_scheme = DirectStationaryScheme(
+        #     F, G,
+        #     square_shape,
+        #     material,
+        #     limits
+        # )
 
-        logger.info(
-            "Started Direct (%d, %d) %.2f with %d equations",
-            cell, direct_dots[cell], tcc, F.size
-        )
-        direct_res, exit_code = direct_scheme.solve(tol=1e-6, inner_tol=5e-4)
-        if not exit_code:
-            np.save(result_folder + f"direct/{cell:02d}", direct_res)
+        # logger.info(
+        #     "Started Direct (%d, %d) %.2f with %d equations",
+        #     cell, direct_dots[cell], tcc, F.size
+        # )
+        # direct_res, exit_code = direct_scheme.solve(tol=1e-6, inner_tol=5e-4)
+        # if not exit_code:
+        #     np.save(result_folder + f"direct/{cell:02d}", direct_res)
 
         # if tcc == prev_tcc:
         #     continue
-        # square_shape = [200, 200]
-        # F, G = AsymptoticStationaryScheme.GetBoundaries(
-        #     f, g,
-        #     square_shape,
-        #     material,
-        #     limits,
-        #     stef_bolc,
-        #     use_sam=False
-        # )
-        # fam_scheme = AsymptoticStationaryScheme(
-        #     F, G,
-        #     square_shape,
-        #     material,
-        #     limits,
-        #     use_sam=False
-        # )
+        F, G = AsymptoticStationaryScheme.GetBoundaries(
+            f, g,
+            square_shape,
+            material,
+            limits,
+            stef_bolc,
+            use_sm=True
+        )
+        sam_scheme = AsymptoticStationaryScheme(
+            F, G,
+            square_shape,
+            material,
+            limits,
+            use_sm=True
+        )
 
-        # logger.info(
-        #     "Started FAM (%d) %.2f with %d equations",
-        #     cell, tcc, F.size
-        # )
-        # fam_res, exit_code = fam_scheme.solve(tol=1e-6, inner_tol=5e-4)
-        # if not exit_code:
-        #     np.save(result_folder + "fam", fam_res)
-
-        # F, G = AsymptoticStationaryScheme.GetBoundaries(
-        #     f, g,
-        #     square_shape,
-        #     material,
-        #     limits,
-        #     stef_bolc,
-        #     use_sam=True
-        # )
-        # sam_scheme = AsymptoticStationaryScheme(
-        #     F, G,
-        #     square_shape,
-        #     material,
-        #     limits,
-        #     use_sam=True
-        # )
-
-        # logger.info(
-        #     "Started SAM (%d) %.2f with %d equations",
-        #     cell, tcc, F.size
-        # )
-        # sam_res, exit_code = sam_scheme.solve(tol=1e-6, inner_tol=5e-4)
-        # if not exit_code:
-        #     np.save(result_folder + "sam", sam_res)
+        logger.info(
+            "Started SAM (%d) %.2f with %d equations",
+            10, tcc, F.size
+        )
+        sam_res, exit_code = sam_scheme.solve(tol=1e-6, inner_tol=5e-4)
+        if not exit_code:
+            np.save(result_folder + "sam", sam_res)
 
         # prev_tcc = tcc
 
 
 def checkTest():
     start, finish = 10, 50
-    cells = list(range(start, finish+1))#
+    cells = list(range(start, finish+1, 1))
     thermal_conds = [1.0, 5.0, 10.0, 20.0]
     limits = (0.0, 1.0)
 
@@ -186,15 +187,15 @@ def checkTest():
         direct_res = np.load(result_folder + f"direct/{cell:02d}" + ".npy")
         direct_res = DirectStationaryScheme.flatten(direct_res, limits, mod=1)
 
-        fdm_res = np.load(result_folder + f"fdm/{cell:02d}" + ".npy")
-        sdm_res = np.load(result_folder + f"sdm/{cell:02d}" + ".npy")
+        # fdm_res = np.load(result_folder + f"fdm/{cell:02d}" + ".npy")
+        # sdm_res = np.load(result_folder + f"sdm/{cell:02d}" + ".npy")
 
-        errs_L2[tcc][0].append(
-            norm((direct_res - fdm_res).flatten()) / norm(direct_res.flatten())
-        )
-        errs_L2[tcc][1].append(
-            norm((direct_res - sdm_res).flatten()) / norm(direct_res.flatten())
-        )
+        # errs_L2[tcc][0].append(
+        #     norm((direct_res - fdm_res).flatten()) / norm(direct_res.flatten())
+        # )
+        # errs_L2[tcc][1].append(
+        #     norm((direct_res - sdm_res).flatten()) / norm(direct_res.flatten())
+        # )
         # errs_L_inf[tcc][0].append(
         #     norm((direct_res - fdm_res).flatten(), ord=np.inf)
         #     / norm(direct_res.flatten(), ord=np.inf)
@@ -204,25 +205,25 @@ def checkTest():
         #     / norm(direct_res.flatten(), ord=np.inf)
         # )
 
-        # fam_res = AsymptoticStationaryScheme.flatten(
-        #     np.load(result_folder + "fam.npy"),
-        #     limits,
-        #     square_shape=[cell, cell]
-        # )
-        # sam_res = AsymptoticStationaryScheme.flatten(
-        #     np.load(result_folder + "sam.npy"),
-        #     limits,
-        #     square_shape=[cell, cell]
-        # )
+        fam_res = AsymptoticStationaryScheme.flatten(
+            np.load(result_folder + "fam.npy"),
+            limits,
+            square_shape=[cell, cell]
+        )
+        sam_res = AsymptoticStationaryScheme.flatten(
+            np.load(result_folder + "sam.npy"),
+            limits,
+            square_shape=[cell, cell]
+        )
 
-        # errs_L2[tcc][0].append(
-        #     norm((direct_res - fam_res).flatten()) / norm(direct_res.flatten())
-        # )
-        # errs_L2[tcc][1].append(
-        #     norm((direct_res - sam_res).flatten()) / norm(direct_res.flatten())
-        # )
+        errs_L2[tcc][0].append(
+            norm((direct_res - fam_res).flatten()) / norm(direct_res.flatten())
+        )
+        errs_L2[tcc][1].append(
+            norm((direct_res - sam_res).flatten()) / norm(direct_res.flatten())
+        )
 
-        print("Ready cell", cell)
+        logger.info("Ready cell %d", cell)
 
     data_L2 = []
     # data_L_inf = []
@@ -230,15 +231,15 @@ def checkTest():
     for tcc in thermal_conds:
         data_L2 += list(map(np.array, errs_L2[tcc]))
         # data_L_inf += list(map(np.array, errs_L_inf[tcc]))
-        legends += [rf"FDM:$\lambda$={tcc}", rf"SDM:$\lambda$={tcc}"]
+        legends += [rf"FAM:$\lambda$={tcc}", rf"SAM:$\lambda$={tcc}"]
 
     draw1D(
         data_L2,
         [start, finish],
-        "fdm & sdm L2-errors",
+        "fam & sam L2-errors",
         legends=legends,
         yscale="log",
-        show_plot=1,
+        show_plot=0,
     )
     # draw1D(
     #     data_L_inf,
@@ -271,7 +272,7 @@ def draw1D(
             single_data,
             label=lab,
             color=colors[i//2],
-            #marker="o" if i%2 == 0 else "s",
+            # marker="o" if i%2 == 0 else "s",
             linestyle='-' if i%2 == 0 else '--',
             #linewidth=1.25,
         )
@@ -294,7 +295,7 @@ if __name__ == "__main__":
         filename='stat_test.log',
         filemode='w',
         encoding='utf-8',
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='%(asctime)s\t%(levelname)s\t%(message)s',
         datefmt='%d.%m.%Y %H:%M:%S'
     )

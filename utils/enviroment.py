@@ -40,6 +40,8 @@ class NonStatTest:
     direct_folder: str = "1.Решение задачи - Прямой метод"
     err_fdm_folder: str = "2.Ошибка - Первый дискретный метод"
     err_sdm_folder: str = "3.Ошибка - Второй дискретный метод"
+    err_fam_folder: str = "4.Ошибка - Первый асимптотический метод"
+    err_sam_folder: str = "5.Ошибка - Второй асимптотический метод"
 
     def init_test_folder(self):
         param_description: dict[str, Callable] = {
@@ -52,13 +54,22 @@ class NonStatTest:
 
         if self.name not in os.listdir():
             os.mkdir(self.name)
-            os.chdir(self.name)
+
+        os.chdir(self.name)
+
+        if self.__heat_src_folder not in os.listdir():
             os.mkdir(self.__heat_src_folder)
+        if self.direct_folder not in os.listdir():
             os.mkdir(self.direct_folder)
+        if self.err_fdm_folder not in os.listdir():
             os.mkdir(self.err_fdm_folder)
+        if self.err_sdm_folder not in os.listdir():
             os.mkdir(self.err_sdm_folder)
-        else:
-            os.chdir(self.name)
+        if self.err_fam_folder not in os.listdir():
+            os.mkdir(self.err_fam_folder)
+        if self.err_sam_folder not in os.listdir():
+            os.mkdir(self.err_sam_folder)
+
         with open(self.__test_describe_filename, "w", encoding='utf8') as file:
             file.write(self.description)
             for field, value in self.params._asdict().items():

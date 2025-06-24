@@ -36,12 +36,12 @@ class DMNonStationaryScheme(BaseNonStationaryScheme, DMStationaryScheme):
             dt: time step.
             limits: description of the computing area, [a, b] for
                 stationary schemes.
-            use_sdm: tells wether account material's thermal conductivity or not.
+            use_sm: tells wether account material's thermal conductivity or not.
         Returns:
             the instance of the DMNonStationaryScheme class.
         """
         super().__init__(F, G, square_shape, material, dt, limits)
-        DMStationaryScheme.__init__(self, F, G, square_shape, material, limits, use_sdm=kwargs.get("use_sdm", False))
+        DMStationaryScheme.__init__(self, F, G, square_shape, material, limits, use_sm=kwargs.get("use_sm", False))
 
         self.mask = np.ones(self.square_shape)
 
@@ -137,19 +137,19 @@ class DMNonStationaryScheme(BaseNonStationaryScheme, DMStationaryScheme):
             square_shape: shape of the scheme. [n, n] for discrete methods
                 and [n, n, m, m] for direct.
             limits: description of the computing area, [a, b, T] for non-stationary
-            use_sdm: tells wether account material's thermal conductivity or not.
+            use_sm: tells wether account material's thermal conductivity or not.
         Returns:
             [F, G]
         """
         h: np.float64 = (limits[1] - limits[0]) / square_shape[0]
         dt = kwargs.get("dt", 0.1)
 
-        use_sdm = kwargs.get("use_sdm", True)
+        use_sm = kwargs.get("use_sm", True)
         t_array = np.arange(0, limits[2] + 0.5 * dt, dt)
 
-        # HeatStream, _ = DMStationaryScheme.createH(h, material.thermal_cond, stef_bolc, use_sdm)
+        # HeatStream, _ = DMStationaryScheme.createH(h, material.thermal_cond, stef_bolc, use_sm)
         BoundaryHeatStream, _ = DMStationaryScheme.createH(
-            h, 2.0 * material.thermal_cond, stef_bolc, use_sdm
+            h, 2.0 * material.thermal_cond, stef_bolc, use_sm
         )
 
         # f = lambda x, y, T: HeatStream(f_func(T, x, y))

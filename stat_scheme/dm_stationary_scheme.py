@@ -41,13 +41,13 @@ class DMStationaryScheme(BaseStationaryScheme):
         cells = self.square_shape[0]
         self.h = (self.limits[1] - self.limits[0]) / cells
 
-        use_sdm = kwargs.get("use_sdm", True)
+        use_sm = kwargs.get("use_sm", True)
 
         self.H, self.dH = DMStationaryScheme.createH(
-            self.h, self.material.thermal_cond, self.stef_bolc, use_sdm
+            self.h, self.material.thermal_cond, self.stef_bolc, use_sm
         )
         self.B, self.dB = DMStationaryScheme.createH(
-            self.h, 2.0 * self.material.thermal_cond, self.stef_bolc, use_sdm
+            self.h, 2.0 * self.material.thermal_cond, self.stef_bolc, use_sm
         )
 
 
@@ -237,11 +237,11 @@ class DMStationaryScheme(BaseStationaryScheme):
             [F, G]
         """
         h: np.float64 = (limits[1] - limits[0]) / square_shape[0]
-        use_sdm = kwargs.get("use_sdm", False)
+        use_sm = kwargs.get("use_sm", False)
 
-        # HeatStream, _ = DMStationaryScheme.createH(h, material.thermal_cond, stef_bolc, use_sdm)
+        # HeatStream, _ = DMStationaryScheme.createH(h, material.thermal_cond, stef_bolc, use_sm)
         BoundaryHeatStream, _ = DMStationaryScheme.createH(
-            h, 2.0 * material.thermal_cond, stef_bolc, use_sdm
+            h, 2.0 * material.thermal_cond, stef_bolc, use_sm
         )
 
         # f = lambda x, y: HeatStream(f_func(x, y))
@@ -295,7 +295,7 @@ class DMStationaryScheme(BaseStationaryScheme):
         h: np.float64,
         thermal_cond: np.float64,
         stef_bolc: np.float64,
-        use_sdm: bool = False
+        use_sm: bool = False
         ):
         """
         Creates function H and its derivative to compute heat stream of the cell
@@ -304,13 +304,13 @@ class DMStationaryScheme(BaseStationaryScheme):
             h: cell's side length
             thermal_cond: material's thermal cond.
             stef_bolc: Stefan-Boltzman constant (may be normed)
-            use_sdm: tells wether account material's thermal conductivity or not.
+            use_sm: tells wether account material's thermal conductivity or not.
         Returns:
             H, dH
         """
         w = 100.0 if stef_bolc > 1.0 else 1.0
 
-        if not use_sdm:
+        if not use_sm:
             H = lambda v: stef_bolc * np.power(v, 4)
 
             dH = lambda v: 4.0 * stef_bolc / w * v**3

@@ -77,14 +77,14 @@ def test_stat(scheme_no, use_sdm, cell, cell_size, tcc, crho):
     logger.info("Started test (%d, %d) %.2f with %d equations", cell, cell_size, tcc, F.size)
     res, _ = scheme.solve(1e-6, inner_tol=5e-4)
     # data = Scheme.flatten(res, square_shape, limits, mod=0)
-    data = Scheme.flatten(res, limits, mod=0)
+    data = Scheme.flatten(res, limits, mod=1)
     if True or scheme_no == 0:
         drawHeatmap(
             data,
             limits,
-            # "direct",
-            "asymptotic",
-            show_plot=1,
+            "direct_flatten",
+            # "asymptotic",
+            show_plot=0,
             # zlim=[300, 600],
         )
     logger.info("Test over")
@@ -100,10 +100,10 @@ if __name__ == "__main__":
         datefmt='%d.%m.%Y %H:%M:%S'
     )
     test_stat(
-        scheme_no=2,
-        use_sdm=True,
-        cell=200,
-        cell_size=6,
+        scheme_no=0,
+        use_sdm=False,
+        cell=5,
+        cell_size=51,
         tcc=1.0,
         crho=20.0
     )

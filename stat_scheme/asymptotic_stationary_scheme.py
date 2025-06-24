@@ -32,7 +32,7 @@ class AsymptoticStationaryScheme(BaseStationaryScheme):
             material: namedtuple object for containing material properties
             limits: description of the computing area.
                 e.g. [a, b] = [0.0, 1.0].
-            use_sdm: tells wether account material's thermal conductivity or not.
+            use_sm: tells wether account material's thermal conductivity or not.
         Returns:
             the instance of the AsymptoticStationaryScheme class.
         """
@@ -41,13 +41,13 @@ class AsymptoticStationaryScheme(BaseStationaryScheme):
         dots = self.square_shape[0]
         self.h = (self.limits[1] - self.limits[0]) / dots
 
-        use_sam = kwargs.get("use_sam", True)
+        use_sm = kwargs.get("use_sm", True)
 
         self.H, self.dH = AsymptoticStationaryScheme.createH(
-            self.h, self.material.thermal_cond, self.stef_bolc, use_sam
+            self.h, self.material.thermal_cond, self.stef_bolc, use_sm
         )
         self.B, self.dB = AsymptoticStationaryScheme.createH(
-            self.h, 2.0 * self.material.thermal_cond, self.stef_bolc, use_sam
+            self.h, 2.0 * self.material.thermal_cond, self.stef_bolc, use_sm
         )
 
 
@@ -237,13 +237,13 @@ class AsymptoticStationaryScheme(BaseStationaryScheme):
             [F, G]
         """
         h: np.float64 = (limits[1] - limits[0]) / square_shape[0]
-        use_sam = kwargs.get("use_sam", False)
+        use_sm = kwargs.get("use_sm", False)
 
         # HeatStream, _ = AsymptoticStationaryScheme.createH(
-        #     h, material.thermal_cond, stef_bolc, use_sam
+        #     h, material.thermal_cond, stef_bolc, use_sm
         # )
         BoundaryHeatStream, _ = AsymptoticStationaryScheme.createH(
-            h, 2.0 * material.thermal_cond, stef_bolc, use_sam
+            h, 2.0 * material.thermal_cond, stef_bolc, use_sm
         )
 
         # f = lambda x, y: HeatStream(f_func(x, y))
@@ -287,7 +287,7 @@ class AsymptoticStationaryScheme(BaseStationaryScheme):
         h: np.float64,
         thermal_cond: np.float64,
         stef_bolc: np.float64,
-        use_sam: bool = False
+        use_sm: bool = False
         ):
         """
         Creates function H and its derivative to compute heat stream of the cell
@@ -296,13 +296,13 @@ class AsymptoticStationaryScheme(BaseStationaryScheme):
             h: cell's side length
             thermal_cond: material's thermal cond.
             stef_bolc: Stefan-Boltzman constant (may be normed)
-            use_sdm: tells wether account material's thermal conductivity or not.
+            use_sm: tells wether account material's thermal conductivity or not.
         Returns:
             H, dH
         """
         w = 100.0 if stef_bolc > 1.0 else 1.0
 
-        if not use_sam:
+        if not use_sm:
             H = lambda v: stef_bolc * np.power(v, 4)
 
             dH = lambda v: 4.0 * stef_bolc / w * v**3

@@ -16,6 +16,7 @@ def draw1D(
     show_plot=True,
     ylim=[],
     legends=[],
+    filename=""
 ):
     """
     Draw on 1 Ax `len(data)` plots
@@ -38,7 +39,7 @@ def draw1D(
     if show_plot:
         plt.show()
     else:
-        fig.savefig(plot_name + ".png")#, dpi=500)
+        fig.savefig(filename + plot_name + ".png")#, dpi=500)
     plt.close()
     del fig, ax
 
